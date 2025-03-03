@@ -16,18 +16,18 @@ document.addEventListener("DOMContentLoaded", function () {
     let lines = [];
     let isDrawing = false;
     let lastPoint = null;
-    const fadeOutDuration = 3000;
+    const fadeOutDuration = 10000; // 🔹 형광펜이 10초 후 점점 사라짐
     let penActive = false; 
 
     // 🔹 펜 버튼 생성
     const penButton = document.createElement("button");
     penButton.innerText = "🖊️";
     penButton.style.position = "fixed";
-    penButton.style.right = "20px";
+    penButton.style.right = "10px"; // 🔹 화면 오른쪽 끝에 위치
     penButton.style.top = "50%";
     penButton.style.transform = "translateY(-50%)";
     penButton.style.padding = "10px 15px";
-    penButton.style.backgroundColor = "#FFD700"; // 연한 노랑색
+    penButton.style.backgroundColor = "#FFD700"; 
     penButton.style.color = "black";
     penButton.style.border = "none";
     penButton.style.borderRadius = "8px";
@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
     penButton.style.zIndex = "100";
     penButton.style.fontSize = "20px";
     penButton.style.fontWeight = "bold";
+    penButton.style.transition = "background-color 0.2s ease";
     document.body.appendChild(penButton);
 
     // 🔹 펜 버튼 클릭 시 형광펜 On/Off
@@ -43,11 +44,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (penActive) {
             canvas.style.display = "block"; 
             canvas.style.pointerEvents = "auto"; 
-            penButton.style.backgroundColor = "#FFA500"; // 활성화 시 진한 주황색
+            penButton.style.backgroundColor = "#FFA500"; 
         } else {
             canvas.style.display = "none"; 
             canvas.style.pointerEvents = "none"; 
-            penButton.style.backgroundColor = "#FFD700"; // 비활성화 시 연한 노랑색
+            penButton.style.backgroundColor = "#FFD700"; 
         }
     });
 
