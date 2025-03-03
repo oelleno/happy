@@ -153,7 +153,13 @@ export async function excelupload() {
     const uploadBtn = document.getElementById("excel-upload-btn");
     uploadBtn.textContent = "최종업로드완료!";
     uploadBtn.disabled = true;
+    uploadBtn.classList.remove("blink-border"); // 반짝임 효과 제거
     console.log("✅ 엑셀 업데이트가 성공적으로 완료되었습니다!");
+    
+    // 모든 작업 완료 여부 확인 - 부모창의 함수 호출
+    if (window.parent && window.parent.checkAllActionsCompleted) {
+      window.parent.checkAllActionsCompleted();
+    }
   } catch (error) {
     console.error("엑셀 업데이트 오류:", error);
     document.getElementById("status").innerText = "엑셀 업데이트 실패!";

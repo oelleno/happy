@@ -8,7 +8,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2, user-scalable=yes">
-  <title>영수증 관리</title>
+  <title>영수증관리</title>
   <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
@@ -21,7 +21,17 @@
 
     body {
       touch-action: pan-x pan-y pinch-zoom;
-      -webkit-overflow-scrolling: touch;
+      -webkit-overflow-scrolling: touch; /* iOS에서 부드러운 스크롤 */
+    }
+
+    @keyframes blink-border {
+      0% { border-color: #0d6efd; }
+      50% { border-color: #ffff00; box-shadow: 0 0 15px #ffff00; }
+      100% { border-color: #0d6efd; }
+    }
+
+    .blink-border {
+      animation: blink-border 1.5s infinite;
     }
 
     .receipts-grid {
@@ -76,6 +86,12 @@
       cursor: pointer;
       display: flex;
       align-items: center;
+    }
+    
+    .capture-btn.blink-border {
+      border: 2px solid transparent;
+      box-shadow: 0 0 15px #ffff00;
+      animation: blink-border 1.5s infinite;
     }
 
     .receipt-label {
@@ -190,10 +206,12 @@
     <div class="d-flex align-items-center justify-content-center mb-4 gap-3">
       <h2 class="m-0">영수증 관리</h2>
       <button class="add-receipt-btn btn btn-primary btn-contract" id="add-receipt-btn">+</button>
-      <button type="button" id="excel-upload-btn" class="btn btn-primary btn-contract"
-        style="margin-left: 20px; min-width: 180px; min-height: 38px; border: 3px solid #0d6efd;">✅ 최종업로드</button>
+      <button type="button" id="send-customer-btn" class="btn btn-warning btn-contract blink-border"
+        style="margin-left: 10px; min-width: 180px; min-height: 38px; border: 3px solid #ffc107;">🚀 회원알림톡</button>
       <button type="button" id="send-manager-btn" class="btn btn-danger btn-contract"
-        style="margin-left: 10px; min-width: 180px; min-height: 38px; border: 3px solid #dc3545;">📝 매니저알림전송</button>
+        style="margin-left: 10px; min-width: 180px; min-height: 38px; border: 3px solid #dc3545;">📝 매니저알림톡</button>
+      <button type="button" id="excel-upload-btn" class="btn btn-primary btn-contract"
+        style="margin-left: 10px; min-width: 180px; min-height: 38px; border: 3px solid #0d6efd;">✅ 최종업로드</button>
     </div>
 
     <div class="receipts-grid" id="receipts-grid">
@@ -367,6 +385,19 @@
       });
       currentReceiptBox.appendChild(captureBtn);
 
+      // 이미지 캡처 후 반짝이는 효과를 카메라 버튼에서 저장 버튼으로 이동
+      document.querySelectorAll('.blink-border').forEach(el => {
+        if (el.classList.contains('capture-btn')) {
+          el.classList.remove('blink-border');
+        }
+      });
+      
+      // 현재 영수증 컨테이너의 저장 버튼에 반짝이는 효과 추가
+      const saveNoteBtn = currentReceiptBox.closest('.receipt-container').querySelector('.save-note-btn');
+      if (saveNoteBtn && !saveNoteBtn.disabled) {
+        saveNoteBtn.classList.add('blink-border');
+      }
+
       closeCamera();
     });
 
@@ -418,6 +449,11 @@
       document.querySelector('.preview-container').style.display = 'none';
     }
 
+    // 초기 저장 버튼에 반짝임 효과 추가하지 않도록 처리
+    document.addEventListener('DOMContentLoaded', function() {
+      // 회원알림톡부터 반짝이도록 설정 (페이지 로드 시 이미 설정됨)
+    });
+    
     // 노트 저장 버튼 이벤트
     document.addEventListener('click', async function (event) {
       if (!event.target.classList.contains('save-note-btn')) return;
@@ -437,6 +473,7 @@
 
       btn.textContent = '저장 중...';
       btn.disabled = true;
+      btn.classList.remove('blink-border'); // 클릭 시 반짝이기 제거
 
       const today = new Date();
       const year = String(today.getFullYear()).slice(2);
@@ -486,11 +523,32 @@
         btn.textContent = '저장완료';
         btn.disabled = true;
 
+        // 영수증 저장이 완료되면 최종업로드 버튼에 반짝이 효과 적용
+        const uploadBtn = document.getElementById('excel-upload-btn');
+        if (uploadBtn && !uploadBtn.classList.contains('blink-border')) {
+          uploadBtn.classList.add('blink-border');
+        }
 
         const captureBtn = receiptBox.querySelector('.capture-btn');
         captureBtn.disabled = true;
         captureBtn.style.opacity = '0.5';
         captureBtn.style.cursor = 'not-allowed';
+        
+        // 다음 영수증의 저장 버튼에 반짝이기 효과 추가
+        const currentIndex = parseInt(receiptBox.dataset.index);
+        const nextReceiptBox = document.querySelector(`.receipt-box[data-index="${currentIndex + 1}"]`);
+        if (nextReceiptBox) {
+          const nextSaveBtn = nextReceiptBox.closest('.receipt-container').querySelector('.save-note-btn');
+          if (nextSaveBtn && !nextSaveBtn.disabled) {
+            // 다른 모든 반짝이는 버튼에서 효과 제거
+            document.querySelectorAll('.blink-border').forEach(el => {
+              if (!el.id || el.id !== 'excel-upload-btn') {
+                el.classList.remove('blink-border');
+              }
+            });
+            nextSaveBtn.classList.add('blink-border');
+          }
+        }
       } catch (error) {
         console.error('이미지 저장 실패:', error);
         alert('이미지 저장에 실패했습니다.');
@@ -501,24 +559,176 @@
   </script>
   <script type="module">
     import {excelupload} from './excel.js';
-    import {sendKakaoManager} from './kakao.js';
-
+    import {sendKakaoManager, sendKakaoMember} from './kakao.js';
+    import {db} from './firebase.js';
+    import {doc, getDoc} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
+    
+    // 모든 작업 완료 확인 및 팝업 표시 함수
+    function checkAllActionsCompleted() {
+      const customerBtn = document.getElementById('send-customer-btn');
+      const managerBtn = document.getElementById('send-manager-btn');
+      const uploadBtn = document.getElementById('excel-upload-btn');
+      
+      // 세 버튼이 모두 비활성화되었는지 확인
+      if (customerBtn.disabled && managerBtn.disabled && uploadBtn.disabled) {
+        showCompletionPopup();
+      }
+    }
+    
+    // 수고하였습니다 팝업 표시 함수
+    async function showCompletionPopup() {
+      try {
+        // Firestore에서 특정 문서 가져오기
+        const docRef = doc(db, "회원가입계약서", window.docId);
+        const docSnap = await getDoc(docRef);
+        
+        // 계약 담당자 이름 가져오기
+        let managerName = "";
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          managerName = userData.contract_manager || "";
+        }
+        
+        // 오버레이 생성
+        const overlay = document.createElement('div');
+        overlay.className = 'completion-overlay';
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 1999;
+        `;
+        
+        // 팝업 생성
+        const popup = document.createElement('div');
+        popup.className = 'completion-popup';
+        popup.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          color: #212529;
+          padding: 30px;
+          border-radius: 10px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+          z-index: 2000;
+          text-align: center;
+          min-width: 300px;
+        `;
+        
+        // 팝업 내용 구성
+        const titleEl = document.createElement('h3');
+        titleEl.textContent = '모든 작업이 완료되었습니다';
+        titleEl.style.cssText = `
+          font-size: 20px;
+          margin-bottom: 15px;
+          color: #0d6efd;
+        `;
+        
+        const messageEl = document.createElement('p');
+        messageEl.textContent = managerName ? `🎉 ${managerName}님 수고하셨습니다!` : '🎉 수고하셨습니다!';
+        messageEl.style.cssText = `
+          font-size: 24px;
+          margin-bottom: 20px;
+          font-weight: bold;
+        `;
+      
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '확인';
+        closeBtn.style.cssText = `
+          padding: 8px 25px;
+          border: none;
+          border-radius: 5px;
+          background: #0d6efd;
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+        `;
+        closeBtn.onclick = function() {
+          document.body.removeChild(overlay);
+          document.body.removeChild(popup);
+          window.location.href = 'index.html'; // 확인 버튼 클릭 시 index.html로 이동
+        };
+        
+        // 팝업에 요소 추가
+        popup.appendChild(titleEl);
+        popup.appendChild(messageEl);
+        popup.appendChild(closeBtn);
+        
+        // 페이지에 팝업 추가
+        document.body.appendChild(overlay);
+        document.body.appendChild(popup);
+      } catch (error) {
+        console.error("팝업 표시 중 오류 발생:", error);
+      }
+    }
+    
+    // 전역 스코프에 함수 추가
+    window.checkAllActionsCompleted = checkAllActionsCompleted;
+    
     document.getElementById('excel-upload-btn').addEventListener('click', excelupload);
 
+    // 회원알림톡 버튼 클릭 이벤트
+    document.getElementById('send-customer-btn').addEventListener('click', async () => {
+      const button = document.getElementById('send-customer-btn');
+      button.disabled = true;
+      button.textContent = '전송 중...';
+      button.classList.remove('blink-border');
+
+      try {
+        await sendKakaoMember();
+        button.textContent = '📱 회원알림완료!';
+        button.classList.replace('btn-warning', 'btn-secondary');
+        
+        // 회원알림톡 전송 후 매니저알림톡 버튼 반짝이기
+        const managerBtn = document.getElementById('send-manager-btn');
+        managerBtn.classList.add('blink-border');
+        
+        // 모든 작업 완료 여부 확인
+        window.checkAllActionsCompleted();
+      } catch (error) {
+        console.error('회원 알림톡 전송 실패:', error);
+        alert('회원 알림톡 전송에 실패했습니다.');
+        button.disabled = false;
+        button.textContent = '📱 회원알림톡';
+        button.classList.add('blink-border');
+      }
+    });
+
+    // 매니저알림톡 버튼 클릭 이벤트
     document.getElementById('send-manager-btn').addEventListener('click', async () => {
       const button = document.getElementById('send-manager-btn');
       button.disabled = true;
       button.textContent = '전송 중...';
+      button.classList.remove('blink-border');
 
       try {
         await sendKakaoManager();
         button.textContent = '📝 매니저알림완료!';
         button.classList.replace('btn-danger', 'btn-secondary');
+        
+        // 매니저알림톡 전송 후 카메라 버튼 반짝이기 (영수증1)
+        const captureButtons = document.querySelectorAll('.capture-btn');
+        if (captureButtons.length > 0) {
+          // 다른 모든 반짝이는 버튼에서 효과 제거
+          document.querySelectorAll('.blink-border').forEach(el => {
+            el.classList.remove('blink-border');
+          });
+          captureButtons[0].classList.add('blink-border');
+        }
+        
+        // 모든 작업 완료 여부 확인
+        window.checkAllActionsCompleted();
       } catch (error) {
         console.error('매니저 알림 전송 실패:', error);
         alert('매니저 알림 전송에 실패했습니다.');
         button.disabled = false;
-        button.textContent = '📝 매니저알림전송';
+        button.textContent = '📝 매니저알림톡';
+        button.classList.add('blink-border');
       }
     });
   </script>

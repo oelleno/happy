@@ -110,6 +110,51 @@ async function getContractData() {
   return userData;
 }
 
+async function sendKakaoMember() {
+  try {
+    const userData = await getContractData();
+    const customerName = userData.name;
+    const customerPhone = userData.contact; // 회원이 입력한 전화번호
+    const contractUrl = userData.imageUrl.replace('https://', '');
+
+    if (!customerPhone) {
+      throw new Error('회원 전화번호를 찾을 수 없습니다.');
+    }
+
+    console.log(`회원 알림톡 전송 중: ${customerName}님 (${customerPhone})`);
+
+    const params = new URLSearchParams({
+      'apikey': API_KEY,
+      'userid': USER_ID,
+      'senderkey': SENDER_KEY,
+      'tpl_code': 'TY_1680',
+      'sender': SENDER_PHONE,
+      'receiver_1': customerPhone, 
+      'subject_1': '계약서',
+      'message_1': `[${COMPANY_NAME}]\n안녕하세요. ${customerName}님!\n${COMPANY_NAME}에 등록해주셔서 진심으로 감사드립니다!`,
+      'button_1': JSON.stringify({
+        "button": [
+          { "name": "채널추가", "linkType": "AC", "linkTypeName": "채널 추가" },
+          {
+            "name": "계약서 바로가기",
+            "linkType": "WL",
+            "linkTypeName": "웹링크",
+            "linkPc": `https://${contractUrl}`,
+            "linkMo": `https://${contractUrl}`
+          }
+        ]
+      }),
+      'failover': 'N'
+    });
+
+    await sendKakaoAlimtalk(params);
+    return true;
+  } catch (error) {
+    console.error('회원 알림톡 전송 실패:', error);
+    throw error;
+  }
+}
+
 // 매니저 알림톡 (계약서 도착 알림)
 async function sendKakaoManager() {
   try {
@@ -150,4 +195,4 @@ async function sendKakaoManager() {
   }
 }
 
-export { sendVerificationCode, sendKakaoManager};
+export {sendVerificationCode, sendKakaoMember, sendKakaoManager};

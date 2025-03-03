@@ -1,81 +1,104 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // 형광펜 캔버스 생성
     const canvas = document.createElement("canvas");
     document.body.appendChild(canvas);
     canvas.id = "drawingCanvas";
-    canvas.style.position = "fixed";
-    canvas.style.top = "0";
-    canvas.style.left = "0";
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "99";
-    canvas.style.touchAction = "none"; // Added for iPad
+    canvas.style.position = "absolute";
+    canvas.style.pointerEvents = "auto"; 
+    canvas.style.zIndex = "99"; 
+    canvas.style.touchAction = "none"; 
 
     const ctx = canvas.getContext("2d");
+    let lines = [];
+    const fadeOutDuration = 3000; // 형광펜 사라지는 시간 (3초)
 
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const termsSections = document.querySelectorAll(".terms-section");
+        if (termsSections.length === 0) return;
+
+        let minTop = Infinity;
+        let maxBottom = 0;
+        let minLeft = Infinity;
+        let maxRight = 0;
+
+        termsSections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            if (rect.top < minTop) minTop = rect.top;
+            if (rect.bottom > maxBottom) maxBottom = rect.bottom;
+            if (rect.left < minLeft) minLeft = rect.left;
+            if (rect.right > maxRight) maxRight = rect.right;
+        });
+
+        canvas.style.left = minLeft + "px";
+        canvas.style.top = minTop + "px";
+        canvas.width = maxRight - minLeft;
+        canvas.height = maxBottom - minTop;
+
+        const checkboxes = document.querySelectorAll('input[name="terms_agree"], input[name="24h_terms_agree"], input[name="refund_terms_agree"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.style.position = "relative";
+            checkbox.style.zIndex = "100";
+        });
     }
+
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
     let isDrawing = false;
-    let isDragging = false;
     let lastPoint = null;
-    let initialY = null;
-    let lines = [];
-    const fadeOutDuration = 3000;
-
-    class Line {
-        constructor() {
-            this.points = [];
-            this.opacity = 0.7;
-            this.startTime = Date.now();
-        }
-    }
 
     function getPoint(e) {
         if (e.type.includes('touch')) {
             return {
-                x: e.touches[0].clientX,
-                y: e.touches[0].clientY
+                x: e.touches[0].clientX - canvas.offsetLeft,
+                y: e.touches[0].clientY - canvas.offsetTop
             };
         }
         return {
-            x: e.clientX,
-            y: e.clientY
+            x: e.clientX - canvas.offsetLeft,
+            y: e.clientY - canvas.offsetTop
         };
     }
 
-    function isOverRestrictedField(x, y) {
-        const elements = document.elementsFromPoint(x, y);
-        return elements.some(el => ["input", "select"].includes(el.tagName.toLowerCase()));
+    function isOverCheckbox(x, y) {
+        const checkboxes = document.querySelectorAll('input[name="terms_agree"], input[name="24h_terms_agree"], input[name="refund_terms_agree"]');
+        return Array.from(checkboxes).some(checkbox => {
+            const rect = checkbox.getBoundingClientRect();
+            return (
+                x >= rect.left - canvas.offsetLeft &&
+                x <= rect.right - canvas.offsetLeft &&
+                y >= rect.top - canvas.offsetTop &&
+                y <= rect.bottom - canvas.offsetTop
+            );
+        });
     }
 
     function startDrawing(e) {
-        e.preventDefault();
-        e.stopPropagation();
+        const termsSections = document.querySelectorAll(".terms-section");
         const point = getPoint(e);
-        initialY = point.y;
+        let insideTerms = false;
 
-        if (isOverRestrictedField(point.x, point.y)) {
-            isDragging = false;
+        termsSections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            if (point.x >= rect.left - canvas.offsetLeft &&
+                point.x <= rect.right - canvas.offsetLeft &&
+                point.y >= rect.top - canvas.offsetTop &&
+                point.y <= rect.bottom - canvas.offsetTop) {
+                insideTerms = true;
+            }
+        });
+
+        if (!insideTerms || isOverCheckbox(point.x, point.y)) {
+            canvas.style.pointerEvents = "none"; 
             return;
+        } else {
+            canvas.style.pointerEvents = "auto"; 
         }
 
+        e.preventDefault();
         isDrawing = true;
-        isDragging = true;
         lastPoint = point;
-        lines.push(new Line());
-        
-        if (e.type.includes('touch')) {
-            const touch = e.touches[0];
-            lastPoint = {
-                x: touch.clientX,
-                y: touch.clientY
-            };
-        }
+        lines.push({ points: [point], opacity: 0.7, startTime: Date.now() });
         draw(e);
     }
 
@@ -85,26 +108,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const point = getPoint(e);
 
-        if (lastPoint && Math.abs(point.y - initialY) > 10) {
-            stopDrawing();
-            return;
-        }
-
         if (lines.length > 0 && lastPoint) {
             const lastLine = lines[lines.length - 1];
-            const distance = Math.hypot(point.x - lastPoint.x, point.y - lastPoint.y);
-
-            if (distance > 5) {
-                const midpoint = {
-                    x: (point.x + lastPoint.x) / 2,
-                    y: (point.y + lastPoint.y) / 2,
-                };
-                lastLine.points.push(midpoint);
-            }
+            lastLine.points.push(point);
         }
 
         lastPoint = point;
-        lines[lines.length - 1].points.push(point);
         drawLines();
     }
 
@@ -130,10 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function stopDrawing() {
-        if (!isDragging) return;
         isDrawing = false;
-        isDragging = false;
-        lastPoint = null;
     }
 
     function animate() {
@@ -147,28 +153,15 @@ document.addEventListener("DOMContentLoaded", function () {
         requestAnimationFrame(animate);
     }
 
-    // Touch Events
-    // Touch Events with improved handling
-    canvas.addEventListener("touchstart", startDrawing, { passive: false });
-    canvas.addEventListener("touchmove", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        draw(e);
-    }, { passive: false });
-    canvas.addEventListener("touchend", (e) => {
-        e.preventDefault();
-        stopDrawing();
-    });
-    canvas.addEventListener("touchcancel", (e) => {
-        e.preventDefault();
-        stopDrawing();
-    });
-
-    // Mouse Events
     canvas.addEventListener("mousedown", startDrawing);
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stopDrawing);
-    canvas.addEventListener("mouseout", stopDrawing);
+    canvas.addEventListener("mouseleave", stopDrawing);
+
+    canvas.addEventListener("touchstart", startDrawing, { passive: false });
+    canvas.addEventListener("touchmove", draw, { passive: false });
+    canvas.addEventListener("touchend", stopDrawing);
+    canvas.addEventListener("touchcancel", stopDrawing);
 
     animate();
 });
