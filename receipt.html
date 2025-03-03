@@ -681,7 +681,7 @@
 
       try {
         await sendKakaoMember();
-        button.textContent = '📱 회원알림완료!';
+        button.textContent = '회원알림완료!';
         button.classList.replace('btn-warning', 'btn-secondary');
         
         // 회원알림톡 전송 후 매니저알림톡 버튼 반짝이기
@@ -694,7 +694,7 @@
         console.error('회원 알림톡 전송 실패:', error);
         alert('회원 알림톡 전송에 실패했습니다.');
         button.disabled = false;
-        button.textContent = '📱 회원알림톡';
+        button.textContent = '🚀회원알림톡';
         button.classList.add('blink-border');
       }
     });
@@ -708,7 +708,7 @@
 
       try {
         await sendKakaoManager();
-        button.textContent = '📝 매니저알림완료!';
+        button.textContent = '매니저알림완료!';
         button.classList.replace('btn-danger', 'btn-secondary');
         
         // 매니저알림톡 전송 후 카메라 버튼 반짝이기 (영수증1)
