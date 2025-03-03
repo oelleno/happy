@@ -4,13 +4,14 @@ document.addEventListener("DOMContentLoaded", function () {
     document.body.appendChild(canvas);
     canvas.id = "drawingCanvas";
     canvas.style.position = "absolute";
-    canvas.style.pointerEvents = "auto"; 
-    canvas.style.zIndex = "99"; 
-    canvas.style.touchAction = "none"; 
+    canvas.style.pointerEvents = "auto";
+    canvas.style.zIndex = "99";
+    canvas.style.touchAction = "manipulation"; // ✅ 핀치 줌 & 스크롤 가능하도록 설정
 
     const ctx = canvas.getContext("2d");
     let lines = [];
     const fadeOutDuration = 3000; // 형광펜 사라지는 시간 (3초)
+    let touchCount = 0; // 현재 터치된 손가락 개수 추적
 
     function resizeCanvas() {
         const termsSections = document.querySelectorAll(".terms-section");
@@ -23,14 +24,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         termsSections.forEach(section => {
             const rect = section.getBoundingClientRect();
-            if (rect.top < minTop) minTop = rect.top;
-            if (rect.bottom > maxBottom) maxBottom = rect.bottom;
+            const scrollOffset = window.scrollY;
+
+            if (rect.top + scrollOffset < minTop) minTop = rect.top + scrollOffset;
+            if (rect.bottom + scrollOffset > maxBottom) maxBottom = rect.bottom + scrollOffset;
             if (rect.left < minLeft) minLeft = rect.left;
             if (rect.right > maxRight) maxRight = rect.right;
         });
 
-        canvas.style.left = minLeft + "px";
-        canvas.style.top = minTop + "px";
+        canvas.style.left = `${minLeft}px`;
+        canvas.style.top = `${minTop}px`;
         canvas.width = maxRight - minLeft;
         canvas.height = maxBottom - minTop;
 
@@ -43,6 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("scroll", resizeCanvas);
 
     let isDrawing = false;
     let lastPoint = null;
@@ -51,12 +55,12 @@ document.addEventListener("DOMContentLoaded", function () {
         if (e.type.includes('touch')) {
             return {
                 x: e.touches[0].clientX - canvas.offsetLeft,
-                y: e.touches[0].clientY - canvas.offsetTop
+                y: e.touches[0].clientY - canvas.offsetTop + window.scrollY
             };
         }
         return {
             x: e.clientX - canvas.offsetLeft,
-            y: e.clientY - canvas.offsetTop
+            y: e.clientY - canvas.offsetTop + window.scrollY
         };
     }
 
@@ -67,13 +71,18 @@ document.addEventListener("DOMContentLoaded", function () {
             return (
                 x >= rect.left - canvas.offsetLeft &&
                 x <= rect.right - canvas.offsetLeft &&
-                y >= rect.top - canvas.offsetTop &&
-                y <= rect.bottom - canvas.offsetTop
+                y >= rect.top - canvas.offsetTop + window.scrollY &&
+                y <= rect.bottom - canvas.offsetTop + window.scrollY
             );
         });
     }
 
     function startDrawing(e) {
+        if (e.type.includes("touch") && e.touches.length > 1) {
+            // 🔹 양손 터치 시 형광펜 비활성화 (스크롤 & 확대 가능)
+            return;
+        }
+
         const termsSections = document.querySelectorAll(".terms-section");
         const point = getPoint(e);
         let insideTerms = false;
@@ -82,8 +91,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const rect = section.getBoundingClientRect();
             if (point.x >= rect.left - canvas.offsetLeft &&
                 point.x <= rect.right - canvas.offsetLeft &&
-                point.y >= rect.top - canvas.offsetTop &&
-                point.y <= rect.bottom - canvas.offsetTop) {
+                point.y >= rect.top - canvas.offsetTop + window.scrollY &&
+                point.y <= rect.bottom - canvas.offsetTop + window.scrollY) {
                 insideTerms = true;
             }
         });
@@ -153,15 +162,35 @@ document.addEventListener("DOMContentLoaded", function () {
         requestAnimationFrame(animate);
     }
 
+    // ✅ 터치 이벤트 추가 (양손 터치 감지)
+    canvas.addEventListener("touchstart", (e) => {
+        touchCount = e.touches.length;
+        if (touchCount > 1) {
+            canvas.style.pointerEvents = "none"; // 🔹 양손 터치 시 스크롤 가능하도록 설정
+        } else {
+            startDrawing(e);
+        }
+    }, { passive: false });
+
+    canvas.addEventListener("touchmove", (e) => {
+        if (touchCount > 1) return; // 🔹 양손 터치 시 형광펜 동작 방지
+        draw(e);
+    }, { passive: false });
+
+    canvas.addEventListener("touchend", () => {
+        touchCount = 0;
+        stopDrawing();
+    });
+
+    canvas.addEventListener("touchcancel", () => {
+        touchCount = 0;
+        stopDrawing();
+    });
+
     canvas.addEventListener("mousedown", startDrawing);
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stopDrawing);
     canvas.addEventListener("mouseleave", stopDrawing);
-
-    canvas.addEventListener("touchstart", startDrawing, { passive: false });
-    canvas.addEventListener("touchmove", draw, { passive: false });
-    canvas.addEventListener("touchend", stopDrawing);
-    canvas.addEventListener("touchcancel", stopDrawing);
 
     animate();
 });
