@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko" data-bs-theme="dark">
+<!-- Firebase 관련 설정 파일 -->
+<script type="module" src="./firebase.js"></script>
+<script type="module" src="./excel.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2, user-scalable=yes">
+  <title>영수증 관리</title>
+  <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    .container {
+      padding: 2rem;
+      max-width: 100vw;
+      /* 전체 화면을 가득 채우기 */
+    }
+
+    body {
+      touch-action: pan-x pan-y pinch-zoom;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .receipts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      position: relative;
+    }
+
+    .add-receipt-btn {
+      font-size: 24px;
+      padding: 0 15px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+    }
+
+    .receipt-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .receipt-box {
+      width: 200px;
+      height: 300px;
+      border: 1px solid #ccc;
+      border-radius: 8px 8px 0 0;
+      padding: 1rem;
+      background-color: rgba(255, 255, 255, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .receipt-box img {
+      width: 100%;
+      height: 83%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+
+    .capture-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .receipt-label {
+      font-size: 1rem;
+      color: #fff;
+      margin: 0.5rem 0;
+    }
+
+    .note-wrapper {
+      width: 200px;
+      margin-top: -1px;
+    }
+
+    .note-area {
+      width: 100%;
+      min-height: 70px;
+      padding: 1rem;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid #ccc;
+      border-top: none;
+      resize: vertical;
+      border-radius: 0;
+    }
+
+    .save-note-btn {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .camera-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .camera-container {
+      width: 400px;
+      height: 600px;
+      position: relative;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 19px;
+    }
+
+    #camera-view,
+    #preview-canvas {
+      width: 360px;
+      height: 510px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .camera-controls {
+      position: absolute;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .preview-container {
+      display: none;
+      width: 400px;
+      height: 600px;
+      position: relative;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 19px;
+    }
+
+    @media (min-width: 481px) and (max-width: 1800px) {
+      .container {
+        width: 100%;
+        touch-action: manipulation pinch-zoom;
+      }
+
+      body {
+        touch-action: pan-x pan-y pinch-zoom;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .d-flex.align-items-center.justify-content-center.mb-4 {
+        white-space: nowrap;
+        overflow-x: auto;
+        padding-bottom: 10px;
+      }
+
+      .d-flex.align-items-center.justify-content-center.mb-4 h2 {
+        font-size: 1.5rem;
+        min-width: fit-content;
+      }
+
+      .d-flex.align-items-center.justify-content-center.mb-4 button {
+        min-width: fit-content !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-center mb-4 gap-3">
+      <h2 class="m-0">영수증 관리</h2>
+      <button class="add-receipt-btn btn btn-primary btn-contract" id="add-receipt-btn">+</button>
+      <button type="button" id="excel-upload-btn" class="btn btn-primary btn-contract"
+        style="margin-left: 20px; min-width: 180px; min-height: 38px; border: 3px solid #0d6efd;">✅ 최종업로드</button>
+      <button type="button" id="send-manager-btn" class="btn btn-danger btn-contract"
+        style="margin-left: 10px; min-width: 180px; min-height: 38px; border: 3px solid #dc3545;">📝 매니저알림전송</button>
+    </div>
+
+    <div class="receipts-grid" id="receipts-grid">
+      <div class="receipt-container">
+        <div class="receipt-box" data-index="1">
+          <button class="capture-btn"><i class="bi bi-camera"></i></button>
+        </div>
+        <div class="note-wrapper">
+          <textarea class="note-area" placeholder="노트를 입력하세요"></textarea>
+          <button class="save-note-btn btn btn-primary btn-contract">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="camera-modal">
+    <div class="camera-container">
+      <video id="camera-view" autoplay playsinline></video>
+      <div class="camera-controls">
+        <button id="capture-btn" class="btn btn-primary">촬영</button>
+        <button id="close-camera" class="btn btn-secondary">닫기</button>
+      </div>
+    </div>
+    <div class="preview-container">
+      <canvas id="preview-canvas"></canvas>
+      <div class="camera-controls">
+        <button id="save-btn" class="btn btn-success">저장</button>
+        <button id="retake-btn" class="btn btn-secondary">다시 촬영</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    let currentReceiptBox = null;
+    let stream = null;
+    import {storage, db} from "./firebase.js";
+    import {doc, updateDoc, arrayUnion, getDoc} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
+    import {ref, uploadString, getDownloadURL, uploadBytesResumable} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-storage.js";
+
+    // Get docId from localStorage when page loads
+    function initializeDocId() {
+      const storedDocId = localStorage.getItem('receipt_doc_id');
+      if (!storedDocId) {
+        alert('계약서 번호를 찾을 수 없습니다.');
+        window.location.href = 'index.html';
+        return;
+      }
+      window.docId = storedDocId;
+      console.log("현재 docId:", window.docId);
+    }
+    initializeDocId();
+
+    // 영수증 추가 버튼 이벤트 설정
+    document.getElementById('add-receipt-btn').addEventListener('click', createReceiptContainer);
+
+    // 초기 카메라 버튼 이벤트 설정
+    document.querySelectorAll('.capture-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        currentReceiptBox = this.closest('.receipt-box');
+        openCamera();
+      });
+    });
+
+    // 카메라 열기 함수
+    async function openCamera() {
+      const modal = document.querySelector('.camera-modal');
+      const video = document.getElementById('camera-view');
+
+      try {
+        const constraints = {
+          video: {
+            facingMode: {exact: 'environment'},
+            width: {ideal: 1920},
+            height: {ideal: 1080}
+          },
+          audio: false
+        };
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (err) {
+          // Fallback to any available camera if rear camera fails
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        }
+        video.srcObject = stream;
+        modal.style.display = 'flex';
+      } catch (err) {
+        console.error('카메라 접근 오류:', err);
+        alert('카메라를 시작할 수 없습니다.');
+      }
+    }
+
+    // 촬영 버튼 클릭 시 이미지 캡처
+    document.getElementById('capture-btn').addEventListener('click', () => {
+      const video = document.getElementById('camera-view');
+      const canvas = document.getElementById('preview-canvas');
+      const context = canvas.getContext('2d');
+
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+      const aspectRatio = videoWidth / videoHeight;
+
+      const maxWidth = 380;
+      const maxHeight = 510;
+
+      if (maxWidth / aspectRatio <= maxHeight) {
+        canvas.width = maxWidth;
+        canvas.height = maxWidth / aspectRatio;
+      } else {
+        canvas.width = maxHeight * aspectRatio;
+        canvas.height = maxHeight;
+      }
+
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      document.querySelector('.camera-container').style.display = 'none';
+      document.querySelector('.preview-container').style.display = 'block';
+    });
+
+    // 저장 버튼 클릭 시 이미지 저장
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const previewCanvas = document.getElementById('preview-canvas'); // 📌 프리뷰 캔버스
+
+      // 📌 프리뷰 캔버스 크기를 기준으로 이미지 저장
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = previewCanvas.width;
+      finalCanvas.height = previewCanvas.height;
+      const finalContext = finalCanvas.getContext('2d');
+
+      finalContext.drawImage(previewCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+
+      // 이미지 요소 생성 및 표시
+      const img = document.createElement('img');
+      img.src = finalCanvas.toDataURL('image/jpeg'); // 🎯 **프리뷰와 동일한 크기**
+      img.style.borderRadius = '8px';
+
+      const timestamp = new Date().toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      }).replace(' ', '');
+
+      const time = document.createElement('div');
+      time.textContent = timestamp;
+      time.style.position = 'absolute';
+      time.style.bottom = '10px';
+      time.style.left = '15px';
+      time.style.color = 'white';
+      time.style.fontSize = '10px';
+      time.style.background = 'rgba(0,0,0,0.5)';
+      time.style.padding = '9px 10px';
+      time.style.borderRadius = '4px';
+
+      time.style.display = 'flex';
+      time.style.alignItems = 'center';
+
+      currentReceiptBox.innerHTML = '';
+      currentReceiptBox.appendChild(img);
+      currentReceiptBox.appendChild(time);
+
+      const captureBtn = document.createElement('button');
+      captureBtn.className = 'capture-btn';
+      captureBtn.innerHTML = '<i class="bi bi-camera"></i>';
+      captureBtn.addEventListener('click', function () {
+        currentReceiptBox = this.closest('.receipt-box');
+        openCamera();
+      });
+      currentReceiptBox.appendChild(captureBtn);
+
+      closeCamera();
+    });
+
+    // 다시 촬영 버튼 클릭 시
+    document.getElementById('retake-btn').addEventListener('click', () => {
+      document.querySelector('.camera-container').style.display = 'block';
+      document.querySelector('.preview-container').style.display = 'none';
+    });
+
+    // 카메라 닫기 버튼 클릭 시
+    document.getElementById('close-camera').addEventListener('click', closeCamera);
+
+    // 영수증 추가 함수
+    function createReceiptContainer() {
+      const receiptsGrid = document.getElementById('receipts-grid');
+      const existingReceipts = receiptsGrid.querySelectorAll('.receipt-container').length;
+      if (existingReceipts >= 6) {
+        alert("영수증은 최대 6개까지 추가할 수 있습니다.");
+        return;
+      }
+      const container = document.createElement('div');
+      container.className = 'receipt-container';
+      container.innerHTML = `
+        <div class="receipt-box" data-index="${existingReceipts + 1}">
+            <button class="capture-btn"><i class="bi bi-camera"></i></button>
+        </div>
+        <div class="note-wrapper">
+            <textarea class="note-area" placeholder="노트를 입력하세요"></textarea>
+            <button class="save-note-btn btn btn-primary btn-contract">저장</button>
+        </div>
+    `;
+
+      container.querySelector('.capture-btn').addEventListener('click', function () {
+        currentReceiptBox = this.closest('.receipt-box');
+        openCamera();
+      });
+
+      receiptsGrid.appendChild(container);
+    }
+
+    // 카메라 닫기 함수
+    function closeCamera() {
+      const modal = document.querySelector('.camera-modal');
+      modal.style.display = 'none';
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      document.querySelector('.camera-container').style.display = 'block';
+      document.querySelector('.preview-container').style.display = 'none';
+    }
+
+    // 노트 저장 버튼 이벤트
+    document.addEventListener('click', async function (event) {
+      if (!event.target.classList.contains('save-note-btn')) return;
+
+      const btn = event.target;
+      const noteArea = btn.previousElementSibling;
+      let noteText = noteArea.value.trim() || '내용없음';
+      noteText = noteText.replace(/[^a-zA-Z0-9가-힣]/g, "_");
+
+      const receiptBox = btn.closest('.receipt-container').querySelector('.receipt-box');
+      const imgElement = receiptBox.querySelector('img');
+
+      if (!imgElement) {
+        alert("이미지를 먼저 촬영하세요!");
+        return;
+      }
+
+      btn.textContent = '저장 중...';
+      btn.disabled = true;
+
+      const today = new Date();
+      const year = String(today.getFullYear()).slice(2);
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      const datePrefix = `${year}${month}${day}`;
+
+      const receiptIndex = receiptBox.dataset.index || "1";
+      const fileName = `${datePrefix}_R${receiptIndex}_${noteText}.jpg`;
+      if (!window.docId) {
+        alert('계약서 ID를 찾을 수 없습니다.');
+        return;
+      }
+      const storagePath = `회원가입계약서/${window.docId}/${fileName}`;
+      const storageRef = ref(storage, storagePath);
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.src = imgElement.src;
+
+      await new Promise(resolve => {
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          resolve();
+        };
+      });
+
+      const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
+
+      try {
+        await uploadString(storageRef, imageData, 'base64');
+        const downloadURL = await getDownloadURL(storageRef);
+
+        // Update Firestore document with receipt URL
+        const docRef = doc(db, "회원가입계약서", window.docId);
+        await updateDoc(docRef, {
+          receipts: arrayUnion({
+            url: downloadURL,
+            filename: fileName,
+            timestamp: new Date().toISOString()
+          })
+        });
+
+        btn.textContent = '저장완료';
+        btn.disabled = true;
+
+
+        const captureBtn = receiptBox.querySelector('.capture-btn');
+        captureBtn.disabled = true;
+        captureBtn.style.opacity = '0.5';
+        captureBtn.style.cursor = 'not-allowed';
+      } catch (error) {
+        console.error('이미지 저장 실패:', error);
+        alert('이미지 저장에 실패했습니다.');
+        btn.textContent = '저장';
+        btn.disabled = false;
+      }
+    });
+  </script>
+  <script type="module">
+    import {excelupload} from './excel.js';
+    import {sendKakaoManager} from './kakao.js';
+
+    document.getElementById('excel-upload-btn').addEventListener('click', excelupload);
+
+    document.getElementById('send-manager-btn').addEventListener('click', async () => {
+      const button = document.getElementById('send-manager-btn');
+      button.disabled = true;
+      button.textContent = '전송 중...';
+
+      try {
+        await sendKakaoManager();
+        button.textContent = '📝 매니저알림완료!';
+        button.classList.replace('btn-danger', 'btn-secondary');
+      } catch (error) {
+        console.error('매니저 알림 전송 실패:', error);
+        alert('매니저 알림 전송에 실패했습니다.');
+        button.disabled = false;
+        button.textContent = '📝 매니저알림전송';
+      }
+    });
+  </script>
+</body>
+
+</html>

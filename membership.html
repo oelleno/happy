@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2, user-scalable=yes">
+
+  </head>
+
+
+  </script>
+  <title>회원 가입</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Material Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAyP5QTMzBtz8lMEzkE4C66CjFbZ3a17QM",
+      authDomain: "bodystar-1b77d.firebaseapp.com",
+      projectId: "bodystar-1b77d",
+      storageBucket: "bodystar-1b77d.firebasestorage.app",
+      messagingSenderId: "1011822927832",
+      appId: "1:1011822927832:web:87f0d859b3baf1d8e21cad"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+  <script src="./script.js"></script>
+  <script src="./sign.js"></script>
+  <script type="module" src="./excel.js"></script>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./mobile.css">
+  <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+  <script src="https://cdn.ckeditor.com/ckeditor5/34.0.0/classic/ckeditor.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script src="./pencheck.js"></script> <!-- ✏️ 형광펜 -->
+  <script>
+    function sample6_execDaumPostcode() {
+      new daum.Postcode({
+        oncomplete: function (data) {
+          var addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+          document.getElementById("main_address").value = addr;
+        }
+      }).open();
+    }
+
+
+
+    function formatCurrency(input) {
+      // 입력 값에서 숫자만 추출
+      let value = input.value.replace(/[^\d]/g, "");
+
+      // 숫자를 3자리 단위로 쉼표 추가
+      value = new Intl.NumberFormat("ko-KR", {
+        style: "currency",
+        currency: "KRW",
+      }).format(value);
+
+      // ₩ 표시 제거 (placeholder가 이미 ₩를 보여주기 때문에 중복 방지)
+      value = value.replace("₩", "").trim();
+
+      // 변환된 값을 다시 input에 설정
+      input.value = value;
+    }
+
+    function formatBirthdate(input) {
+      // 입력값에서 숫자가 아닌 모든 문자를 제거
+      let value = input.value.replace(/\D/g, '');
+
+      // 입력값이 8자리가 아닐 경우, 아무 것도 하지 않음
+      if (value.length > 8) {
+        value = value.substring(0, 8); // 8자리 초과 시 잘라냄
+      }
+
+      // 8자리일 경우에만 포맷 적용
+      if (value.length === 8) {
+        const year = value.substring(0, 4);
+        const month = value.substring(4, 6);
+        const day = value.substring(6, 8);
+
+        // YYYY-MM-DD 형식으로 설정
+        input.value = `${year}-${month}-${day}`;
+      } else {
+        input.value = value; // 8자리가 아닐 경우, 현재 값 유지
+      }
+    }
+
+
+    function toggleSnsField() {
+      const snsField = document.getElementById('snsField');
+      snsField.style.display = snsField.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleReferralFields() {
+      //  This function likely exists elsewhere in regist.js to handle other referral fields.  Leaving as is.
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header-container">
+      <div style="display: flex; align-items: center;" class="headerLogoSection">
+        <img src="./BDST.png" alt="Logo" style="height: 50px; margin-right: 0px;" class="brandLogo">
+        <div style="display: flex; align-items: center; gap: 10px; margin-left: 10px; margin-top: 20px;">
+          <i class="fa-brands fa-gg-circle icon" style="color: #000000;"></i>
+          <select name="branch" id="branch" class="thisbox" style="width: 100px; height: 30px; margin-left: -5px;">
+            <option value="">지점 선택</option>
+            <option value="용문가장점">용문가장점</option>
+            <option value="관저점">관저점</option>
+          </select>
+        </div>
+      </div>
+      <h2 style="text-align: center; flex: 1;">회원가입계약서<br><span
+          style="font-size: 14px; font-weight: bold; display: block; width: 100%;">Membership Agreement</span></h2>
+
+      <div
+        style="display: flex; align-items: center; gap: 0px; justify-content: flex-end; margin-top: 20px; margin-bottom: 10px;">
+        <p style="padding-left: 0px; margin-bottom: -5px;"><i class="fa-solid fa-circle-info icon"></i>계약담당</p>
+        <input type="text" name="contract_manager" class="thisbox" style="width: 30%; height: 30px; margin-top: 10px; margin-left: 5px;">
+      </div>
+    </div>
+    <hr>
+    <form id="regform">
+
+      <input type="hidden" name="isssn" id="isssn" value="n">
+
+      <div class="section name-contact" style="margin-bottom: -5px;">
+        <div>
+          <p><i class="fa-solid fa-circle-user icon"></i>이름</p>
+          <input type="text" name="name" id="name" maxlength="20" class="thisbox" lang="ko" inputmode="text">
+        </div>
+        <div>
+          <p><i class="fa-solid fa-bowling-ball icon"></i>연락처</p>
+          <input type="text" name="contact" id="contact" maxlength="20" class="thisbox" placeholder="000-0000-0000"
+            oninput="formatPhoneNumber(this)" lang="ko" inputmode="numeric">
+          <script>
+            // Auto-fill verified phone number
+            window.onload = function () {
+              const verifiedPhone = localStorage.getItem('verifiedPhone');
+              if (verifiedPhone) {
+                document.getElementById('contact').value = verifiedPhone;
+                document.getElementById('contact').readOnly = true;
+                document.getElementById('contact').style.backgroundColor = '#f5f5f5';
+              }
+            };
+          </script>
+        </div>
+        <div class="gender-group">
+          <p><i class="fa-solid fa-futbol icon"></i>성별</p>
+          <div class="radio-group">
+            <label style="font-size: 14px;"><input type="radio" name="gender" value="남자"> 남자</label>
+            <label style="font-size: 14px;"><input type="radio" name="gender" value="여자"> 여자</label>
+          </div>
+        </div>
+        <div class="birthdate-group">
+          <p><i class="fa-solid fa-volleyball icon"></i>생년월일</p>
+          <input type="text" name="birthdate" id="birthdate" maxlength="10" class="thisbox"
+            oninput="formatBirthdate(this)" placeholder="20001010" lang="ko" inputmode="numeric">
+        </div>
+      </div>
+
+      <div class="section" style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <p><i class="fa-solid fa-baseball icon"></i>주소</p>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" name="address" id="main_address" class="thisbox" style="margin-bottom: 0;" readonly
+              lang="ko" inputmode="text">
+            <input type="button" value="주소 검색" onclick="sample6_execDaumPostcode()" class="address-search-btn"
+              style="margin-top: 0; border-radius: 10px;">
+          </div>
+        </div>
+        <div style="flex: 1;">
+          <p><i class="fa-solid fa-registered icon"></i>회원권</p>
+          <div style="display: flex; gap: 10px;">
+            <select name="membership" id="membership" class="thisbox" style="width: 50%; height: 35px;"
+              onchange="updateAdmissionFee()">
+              <option value="">선택</option>
+              <option value="New">New</option>
+              <option value="Renew">Renew</option>
+              <option value="Upgrade">Upgrade</option>
+            </select>
+            <input type="text" name="admission_fee" id="admission_fee" class="thisbox"
+              style="width: 50%; height: 35px; background-color: #f5f5f5;" readonly lang="ko" inputmode="numeric">
+          </div>
+        </div>
+      </div>
+
+      <div class="section" style="display: flex; gap: 10px;">
+        <div style="flex: 0.5;">
+          <p><i class="fa-solid fa-universal-access icon"></i>운동복 대여</p>
+          <div style="display: flex; gap: 0px;">
+            <select name="rental_months" id="rental_months" class="thisbox" style="width: 45%; padding-left:5px;"
+              onchange="updateRentalPrice(this)">
+              <option value="">선택</option>
+              <option value="1">1개월</option>
+              <option value="2">2개월</option>
+              <option value="3">3개월</option>
+              <option value="4">4개월</option>
+              <option value="5">5개월</option>
+              <option value="6">6개월</option>
+              <option value="7">7개월</option>
+              <option value="8">8개월</option>
+              <option value="9">9개월</option>
+              <option value="10">10개월</option>
+              <option value="11">11개월</option>
+              <option value="12">12개월</option>
+            </select>
+            <input type="text" name="rental_price" id="rental_price" class="thisbox" placeholder=""
+              style="width: 55%; background-color: #f5f5f5; margin-left: 5px;padding-left: 5px;" readonly lang="ko" inputmode="numeric">
+          </div>
+        </div>
+        <div style="flex: 0.5;">
+          <p><i class="fa-solid fa-circle-minus icon"></i>라커 대여</p>
+          <div style="display: flex; gap: 0px;">
+            <select name="locker_months" id="locker_months" class="thisbox" style="width: 45%; padding-left:5px;"
+              onchange="updateLockerPrice(this)">
+              <option value="">선택</option>
+              <option value="1">1개월</option>
+              <option value="2">2개월</option>
+              <option value="3">3개월</option>
+              <option value="4">4개월</option>
+              <option value="5">5개월</option>
+              <option value="6">6개월</option>
+              <option value="7">7개월</option>
+              <option value="8">8개월</option>
+              <option value="9">9개월</option>
+              <option value="10">10개월</option>
+              <option value="11">11개월</option>
+              <option value="12">12개월</option>
+            </select>
+            <input type="text" name="locker_price" id="locker_price" class="thisbox" placeholder=""
+              oninput="formatCurrency(this)" style="width: 55%; margin-left: 5px;padding-left: 5px; background-color: #f5f5f5;" readonly lang="ko"
+              inputmode="numeric">
+          </div>
+        </div>
+        <div style="flex: 1;">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="flex: 1;">
+              <p style="display: inline-block; margin-left: -5px;"><i class="fa-solid fa-circle-check icon"></i>기간회비</p>
+              <div style="display: flex; gap: 0px;">
+                <select name="membership_months" id="membership_months" class="thisbox"
+                  style="margin-left: 11px; width: 45%;padding-left:5px;" onchange="updateMembershipFee(this)">
+                  <option value="">기간</option>
+                  <option value="1">1개월</option>
+                  <option value="2">2개월</option>
+                  <option value="3">3개월</option>
+                  <option value="6">6개월</option>
+                  <option value="12">12개월</option>
+                </select>
+                <input type="text" name="membership_fee" id="membership_fee" class="thisbox"
+                  style="width: 55%; height: 35px; margin-left: 5px; background-color: #f5f5f5;" placeholder="" readonly lang="ko"
+                  inputmode="numeric">
+              </div>
+            </div>
+            <div style="flex: 1;">
+              <p style="display: inline-block;"><i class="fa-solid fa-circle-down icon"></i>할인</p>
+              <input type="text" name="discount" id="discount" class="thisbox"
+                style="width: 93.2%; height: 35px; background-color: #ffebeb;" readonly placeholder="총 할인금액 (₩)"
+                onclick="showDiscountPopup()" lang="ko" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <p><i class="fa-solid fa-record-vinyl icon"></i>운동목적</p>
+          <div class="goal-group"
+            style="border: 1px solid #ccc; padding: 10px 2px 10px 7px; border-radius: 10px; margin: 0 0px 0px 15px;">
+            <label><input type="checkbox" name="goal" value="다이어트"> 다이어트</label>
+            <label><input type="checkbox" name="goal" value="근육증가"> 근육증가</label>
+            <label><input type="checkbox" name="goal" value="체형교정"> 체형교정</label>
+            <label><input type="checkbox" name="goal" value="재활운동"> 재활운동</label>
+            <div style="margin-top: 0px; display: flex; align-items: center; gap: 0px;">
+              <label style="min-width: 50px; font-size: 14px;"><input type="checkbox" name="goal" value="기타"> 기타</label>
+              <input type="text" name="other" id="other" class="thisbox"
+                style="margin-bottom: 0; width: 35vw; height: 25px;  margin-left: 0px;font-size: 12px;" placeholder="기타 입력" lang="ko"
+                inputmode="text">
+            </div>
+          </div>
+          <p style="margin-top: 15px;"><i class="fa-solid fa-clock icon"></i>운동시간</p>
+          <div style="border: 1px solid #ccc; padding: 10px 7px; border-radius: 10px; margin: 0 0px 10px 15px;">
+            <div style="display: flex; align-items: center; gap: 5px;" class="workoutTime">
+              <div style="display: flex; align-items: center; white-space: nowrap; font-size: 14px;">
+                <select name="morning_hour" class="time-input" style="margin-right: 5px;">
+                  <option value="">시간</option>
+                  <option value="1">01시</option>
+                  <option value="2">02시</option>
+                  <option value="3">03시</option>
+                  <option value="4">04시</option>
+                  <option value="5">05시</option>
+                  <option value="6">06시</option>
+                  <option value="7">07시</option>
+                  <option value="8">08시</option>
+                  <option value="9">09시</option>
+                  <option value="10">10시</option>
+                  <option value="11">11시</option>
+                  <option value="12">12시</option>
+                  <option value="13">13시</option>
+                  <option value="14">14시</option>
+                  <option value="15">15시</option>
+                  <option value="16">16시</option>
+                  <option value="17">17시</option>
+                  <option value="18">18시</option>
+                  <option value="19">19시</option>
+                  <option value="20">20시</option>
+                  <option value="21">21시</option>
+                  <option value="22">22시</option>
+                  <option value="23">23시</option>
+                  <option value="24">24시</option>
+                </select>
+                <span style="display: inline-block;">부터</span>
+              </div>
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 14px;">
+                <select name="afternoon_hour" class="time-input">
+                  <option value="">시간</option>
+                  <option value="1">01시</option>
+                  <option value="2">02시</option>
+                  <option value="3">03시</option>
+                  <option value="4">04시</option>
+                  <option value="5">05시</option>
+                  <option value="6">06시</option>
+                  <option value="7">07시</option>
+                  <option value="8">08시</option>
+                  <option value="9">09시</option>
+                  <option value="10">10시</option>
+                  <option value="11">11시</option>
+                  <option value="12">12시</option>
+                  <option value="13">13시</option>
+                  <option value="14">14시</option>
+                  <option value="15">15시</option>
+                  <option value="16">16시</option>
+                  <option value="17">17시</option>
+                  <option value="18">18시</option>
+                  <option value="19">19시</option>
+                  <option value="20">20시</option>
+                  <option value="21">21시</option>
+                  <option value="22">22시</option>
+                  <option value="23">23시</option>
+                  <option value="24">24시</option>
+                </select>
+                <input type="text" class="time-input" style="width: 19vw;font-size: 12px;" placeholder="추가 입력" lang="ko"
+                  inputmode="text">
+              </label>
+            </div>
+          </div>
+        </div>
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px;">
+            <p style="margin: 0;"><i class="fa-solid fa-gauge icon"></i>합계</p>
+            <div style="display: flex; gap: 0px; font-size: 13px; align-items: center;">
+              <label><input type="radio" name="payment" value="카드"> 카드</label>
+              <label><input type="radio" name="payment" value="현금"> 현금</label>
+              <label><input type="radio" name="payment" value="계좌이체"> 계좌이체</label>
+              <label><input type="radio" name="payment" value="복합결제"> 복합결제</label>
+            </div>
+          </div>
+          <div class="total-amount-container">
+            <input type="text" name="total_amount" id="total_amount" class="thisbox" placeholder="총 금액" readonly
+              lang="ko" inputmode="numeric">
+            <input type="text" name="unpaid" id="unpaid" class="thisbox" readonly lang="ko" inputmode="numeric">
+          </div>
+          <div style="margin-top: 7px; font-size: 13px; padding-left: 20px; display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div style="display: flex; align-items: center; gap: 1px;">
+                  <span style="white-space: nowrap; margin-right: 1px;">현금영수증 여부</span>
+                  <label style="display: flex; align-items: center; gap: px;">
+                    <input type="radio" name="cash_receipt" value="O"> O
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0px;">
+                    <input type="radio" name="cash_receipt" value="X"> X
+                  </label>
+                </div>
+                <input type="text" name="receipt_phone" id="receipt_phone" class="thisbox"
+                  style="width: 95%; height: 30px; margin-left: -5px;font-size: 12px;" placeholder="현금영수증 번호"
+                  oninput="formatPhoneNumber(this)" lang="ko" inputmode="numeric">
+              </div>
+            </div>
+            <!-- 복합결제 내역 -->
+            <div id="payment-summary"
+              style="margin-top: 5px; margin-bottom: -70px; border: 1px solid #ccc; background-color: #f5f5f5; border-radius: 10px; padding: 8px; min-height: 30px; width: 47.5%; margin-right: 0px; font-size: 14px;">
+            </div>
+          </div>
+
+          <p style="margin-top: 13px; width: 45.6%;">
+            <i class="fa-solid fa-circle-play icon"></i>회원권
+            시작일
+          </p>
+          <input type="date" name="membership_start_date" id="membership_start_date" class="thisbox"
+            style="width: 46%;">
+          <script>
+            document.getElementById('membership_start_date').valueAsDate = new Date();
+
+            // 관리자코드에 기존 고객 정보 불러오기
+            window.addEventListener('DOMContentLoaded', async function () {
+              const urlParams = new URLSearchParams(window.location.search);
+              const shouldLoad = urlParams.get('load') === 'true';
+              const phone = urlParams.get('phone');
+
+              if (shouldLoad && phone) {
+                try {
+                  const querySnapshot = await db.collection("회원가입계약서").get();
+                  querySnapshot.forEach((doc) => {
+                    if (doc.data().contact === phone) {
+                      const data = doc.data();
+
+                      // Fill in all form fields
+                      document.getElementById('name').value = data.name || '';
+                      document.getElementById('contact').value = data.contact || '';
+                      document.getElementById('birthdate').value = data.birthdate || '';
+                      document.getElementById('main_address').value = data.address || '';
+                      // Set radio buttons
+                      if (data.gender) {
+                        document.querySelector(`input[name="gender"][value="${data.gender}"]`).checked = true;
+                      }
+                    }
+                  });
+                } catch (error) {
+                  console.error("Error loading member data:", error);
+                  alert('데이터 불러오기 실패');
+                }
+              }
+            });
+          </script>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top: -10px;">
+        <p><i class="fa-solid fa-compass icon"></i>가입경로</p>
+        <div style="padding: 5px 7px; margin: 0 0px 10px 15px; border: 1px solid #ccc; border-radius: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;" class="referral">
+            <label style="font-size: 14px; white-space: nowrap;"><input type="checkbox" name="referral" value="간판">
+              간판</label>
+            <label style="font-size: 14px; white-space: nowrap;"><input type="checkbox" name="referral" value="전단지">
+              전단지</label>
+            <div style="display: flex; align-items: center; gap: 0px;">
+              <label style="font-size: 14px; white-space: nowrap; margin-right: -10px;"><input type="checkbox"
+                  name="referral" value="SNS">
+                SNS</label>
+              <input type="text" name="sns_detail" id="snsField" class="thisbox" style="width: 100%; height: 30px;font-size: 12px; "
+                placeholder="SNS 채널명" lang="ko" inputmode="text">
+            </div>
+            <div style="display: flex; align-items: center; gap: 0px;">
+              <label style="font-size: 14px; white-space: nowrap; margin-right: -10px;"><input type="checkbox"
+                  name="referral" value="인터넷검색">
+                인터넷검색</label>
+              <input type="text" name="internet_detail" class="thisbox"
+                style="font-size: 12px; width: 100%; height: 30px; padding-left:5px" placeholder="사이트/검색어" lang="ko" inputmode="text">
+            </div>
+            <div style="display: flex; align-items: center; gap: 0px;">
+              <label style="font-size: 14px; white-space: nowrap; margin-right: -10px;"><input type="checkbox"
+                  name="referral" value="지인추천">
+                지인추천</label>
+              <input type="text" name="referral_name" class="thisbox" style="font-size: 12px; width: 100%; height: 30px;"
+                placeholder="이름/연락처" lang="ko" inputmode="text">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 약관 내용 추가 -->
+      <div class="section terms-section" style="margin-left: 20px;">
+        <p class="terms"><strong>1.회원권 휴회</strong> <br>
+          6개월 1회, 12개월 2회 가능하고, 연기 신청서를 작성시 인정됩니다. 회당 최대 30일까지 휴회가 가능하고, 락카기간은 정지가 불가합니다.<br>군복무, 임신 등 센터가 인정하는 사유로 장기간
+          이용할 수 없는 경우에는 센터에서 정한 양식을 작성하고 관계 증빙서류를 첨부 제출하여 휴회할 수 있습니다.<br>
+          <strong>2.회원권 양도</strong><br>
+          회원권은 타인에게 대여가 불가하고, 양도는 신규 회원에게만 가능합니다. 양도비 55,000원(부가세 포함)이 발생합니다.<br>서비스로 받은 기간 및 상품은 양도되지 않으며, 양도 받은 회원권은
+          환불, 휴회, 재양도가 불가합니다.<br>
+          <strong>3.회원권 자격 상실</strong> <br>
+          본 센터는 다른 회원님의 안전과 배려를 위한 본 계약서의 등록 조건 및 규정, 지침을 위반한 회원님의 경우 회원권을 해지할 수 있습니다.<br>이 경우, 센터가 입은 손해나 손실에 대하여 위반
+          회원님에게 청구할 권리가 있습니다.<br>
+          <strong>4.추가 비용 및 락카 물품관리</strong> <br>
+          유니폼, 개인락카 등 부대시설은 별도의 추가 비용으로 이용하실 수 있습니다. 별도의 추가 없이 무단으로 이용할 경우, 이용료 10배 벌금이 부과될 수 있습니다.<br>기간이 만료된 개인락카는 만료일
+          기준으로 회수되며, 물품은 30일동안 보관 후 폐기처분됩니다.<br>
+          <strong>5.회원권 규정 및 지침의 변경</strong> <br>
+          본 센터는 필요한 경우 회원권 규정 및 지침을 수정할 수 있으며, 특정시설 및 영업시간을 변경하거나 임시로 휴업할 수 있습니다.<br>프로그램 강습 및 서비스를 회원에게 고지 후 변경, 폐지할 수
+          있습니다.<br>
+          <strong>6.면책 규정</strong> <br>
+          센터는 어떤 경우에도 시설 내에서 분실 또는 도난 당한 물품에 대해서 책임지지 않으며, 회원님 개인 물품의 보관은 전적으로 개인 책임입니다.<br>본 센터가 시설 관리 또는 회원 질서유지 등과
+          관련하여 책임 있는 경우를 제외하고, 시설을 이용하는 회원님 자신 또는 제 3자의 행위로 인한<br>신체적, 정신적 장애나 경제적 혹은 기타 손실에 대해 본 센터가 어떠한 책임도 지지 않는 것에
+          동의합니다.<br>
+          <strong>7.회원권 해지</strong> <br>
+          해지는 전화 신청이 불가하며, 센터 절차에 따라 직접 방문 작성, 신청하셔야 합니다.<br>
+          <strong>8.운동 중 상해 발생</strong> <br>
+          트레이너 동반 없이 개인 운동 중 상해가 발생하게 되는 경우, 본 센터는 책임지지 않습니다.<br>
+          <strong>9.지점이용</strong> <br>
+          등록한 지점 외 다른 지점은 월 5회 이용 가능합니다.<br>
+        <div style="text-align: right; margin-top-25px;">
+          <label style="font-size: 14px;">
+            <input type="checkbox" name="terms_agree" lang="ko" inputmode="checkbox"> <strong>위 약관에 동의합니다</strong>
+          </label>
+        </div>
+
+        <hr style="margin-left: -10px;">
+        </p>
+      </div>
+
+      <div class="section terms-section"
+        style="border-bottom: 2.5px solid #003366; display: flex; gap: 5px; margin-top: -15px; margin-left: 10px;">
+        <div style="flex: 1;">
+          <p class="terms" style="margin-bottom: 2px; text-align: center;"><strong>24시 이용안내</strong></p>
+          <hr style="border-top: 1px solid #003366; width: 102%; margin: 5px 0;">
+          <p class="terms">1. 야간 서비스는 만 19세 이상부터 이용 가능합니다.<br>
+            2. 음주시 센터 이용과 센터 내 음주는 불가합니다.<br>
+            3. 클럽 회원은 회원 등록이 안된 게스트와 함께 입장할 수 없습니다.<br>
+            4. 24시간 CCTV가 작동중이며 시설 내의 모든 활동을 365일 기록합니다.<br>
+            5. 타인의 출입을 위해 임의로 문을 여는 것은 금지됩니다.<br>
+            6. 응급 처치 키트는 입구 근처 프론트 데스크 비치되어 있습니다.<br>
+            7. 휴일 및 공휴일에는 운동복 및 수건이 지급되지 않을 수 있습니다.<br>
+            8. 형법 제319조에 의거 무단출입 또는 타인의 무단출입을 도와줄 경우,<br>&nbsp;&nbsp;&nbsp;&nbsp;최대 500만원의 벌금에 처할 수 있습니다.<br>
+            <hr style="border: 0; border-top: 1px solid #003366;; margin: 5px 0;">
+            <strong style="font-size: 1.7vw; line-height: 2; display: block;">
+              <i class="fa-solid fa-circle-exclamation icon"></i>모든 사용자는 항상 클럽 내 규칙 및 표준에 따라야 합니다.
+            </strong><strong style="font-size: 1.7vw; margin-left: 24px; display: block;margin-top: -8px;">
+              위 규칙 위반 시 회원권 권한이 상실될 수 있습니다.
+            </span></strong>
+          </p>
+          <div style="text-align: right; margin-top: -10px;">
+            <label style="font-size: 14px;">
+              <input type="checkbox" name="24h_terms_agree" lang="ko" inputmode="checkbox"> <strong>위 이용안내에
+                동의합니다</strong>
+            </label>
+          </div>
+        </div>
+        <div style="flex: 1;">
+          <p class="terms" style="margin-bottom: 2px; text-align: center;"><strong>환불안내</strong></p>
+          <hr style="margin: 5px 0;">
+          <div
+            style="position: relative; margin-left: 10px; margin-top: 10px; margin-bottom: 2px; border: 3px solid #333; padding: 10.5px; display: inline-block; width: 95%;">
+            <span
+              style="position: absolute; top: -10px; left: 10px; background: white; padding: 0 5px; font-size: 12px; font-weight: bold;">서비스
+              정상가격</span>
+            <p class="terms" style="margin: 0;font-size: 1.6vw; font-weight: bold;">회원권 1일 5,000원 | 무료PT 50,000원 | GX 30,000원</p>
+          </div>
+          <p class="terms">1. 이용 개시일 전에는 위약금 10%가 공제됩니다.<br>
+            2. 이용 개시일 후에는 위약금 10% + 소요기간 * 정상가격이 공제됩니다.<br>
+            3. 가입시 서비스로 제공되는 기간, 시설, 레슨, 사은품 등은 환불 요청시<br>&nbsp;&nbsp;&nbsp;&nbsp;상품가치에 해당하는 금액이 공제됩니다.<br>
+            4. 가입비는 환불되지 않습니다.<br>
+            5. 해지시 개인적인 사정에 의해 연기된 기간은 이용 기간에 포함됩니다.<br>
+            6. 무료PT의 경우 일방적인 수업 취소시에도 금액이 공제됩니다.<br>
+            7. 환불은 신청 후 영업일 기준 15일 이내에 처리 됩니다.</p>
+          <div style="text-align: right; margin-top: 0px;">
+            <label style="font-size: 14px;">
+              <input type="checkbox" name="refund_terms_agree" lang="ko" inputmode="checkbox"> <strong>위 환불규정에
+                동의합니다</strong>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section signbox">
+        <p style="font-weight: bold; font-size: 1.6vw; margin-top: 4px;">본인은 위 계약내용을 <span class="dictation-text"
+            data-text="모두 이해">모두 이해</span>하였고, 이에 <span class="dictation-text" data-text="동의">동의</span>하였습니다. 또한 본인 자필로
+          서명한 회원가입계약서 사본을 교부 받았음을 <span class="dictation-text" data-text="인정">인정</span>합니다.
+
+        <div class="sign-date">
+          <p style="font-size: 14px; font-weight: bold;"><select class="year" id="yearInput"
+              style="font-size: 14px; font-weight: bold;"></select> 년
+            <select class="month" id="monthInput" style="font-size: 14px; font-weight: bold;"></select> 월
+            <select class="day" id="dayInput" style="font-size: 14px; font-weight: bold;"></select> 일
+          </p>
+        </div>
+        <div>
+          <p style="margin: -30px 140px 5px 0px; font-size: 12px; text-align: right;">신청인
+          <p style="margin: -25px 10px 0px 0px; text-align: right;"><span class="dictation-text" data-text="(서명)"
+              style="padding: 30px 90px; display: inline-block; position: relative;"><span
+                style="position: absolute; bottom: 30px; right: 5px;">(서명)</span></span></p>
+        </div>
+      </div>
+  </div>
+  </div>
+  <style>
+    .dictation-text {
+      cursor: pointer;
+      position: relative;
+      display: inline-block;
+      color: #999999;
+      border: 1px solid #cccccc;
+      padding: 0px 4px;
+      border-radius: 3px;
+    }
+
+    .dictation-text img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  </style>
+  <script>
+    // Initialize date selectors
+    (function initializeDateSelectors() {
+      var today = new Date();
+      const yearSelect = document.getElementById('yearInput');
+      const monthSelect = document.getElementById('monthInput');
+      const daySelect = document.getElementById('dayInput');
+
+      // Populate year select (current year to 2025)
+      const currentYear = today.getFullYear();
+      for (let year = currentYear; year <= 2025; year++) {
+        const option = document.createElement('option');
+        option.value = year.toString();
+        option.text = year.toString();
+        yearSelect.appendChild(option);
+      }
+
+      // Populate month select (1-12)
+      for (let i = 1; i <= 12; i++) {
+        const option = document.createElement('option');
+        option.value = i.toString().padStart(2, '0');
+        option.text = i.toString().padStart(2, '0');
+        monthSelect.appendChild(option);
+      }
+
+      // Populate day select (1-31)
+      for (let i = 1; i <= 31; i++) {
+        const option = document.createElement('option');
+        option.value = i.toString().padStart(2, '0');
+        option.text = i.toString().padStart(2, '0');
+        daySelect.appendChild(option);
+      }
+
+      // Set default values to today
+      yearSelect.value = today.getFullYear().toString();
+      monthSelect.value = (today.getMonth() + 1).toString().padStart(2, '0');
+      daySelect.value = today.getDate().toString().padStart(2, '0');
+    })();
+
+    // Initialize dictation text handlers
+    document.querySelectorAll('.dictation-text').forEach(element => {
+      element.addEventListener('click', function () {
+        const text = this.dataset.text;
+        initDictationCanvas(text, (imageData) => {
+          const img = document.createElement('img');
+          img.src = imageData;
+          this.appendChild(img);
+        });
+      });
+    });
+  </script>
+  <div class="button-container">
+    <button type="button" onclick="handleSubmit()" class="submitBtn">가입완료</button>
+    <button type="button" id="sendKakao" style="display: none;">카카오 발송</button>
+    <div id="status" style="color: #4CAF50; margin-top: 10px; font-weight: bold;"></div>
+    <script type="module" src="./firebase.js"></script>
+    <script type="module" src="./kakao.js"></script>
+  </div>
+  </form>
+  </div>
+  </body</html>

@@ -1,0 +1,399 @@
+/* 1. 기본 설정 */
+* {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;   /* 텍스트복사방지 */
+}
+
+
+body {
+  width: 100vw;
+  height: 100%;
+  font-family: "Nunito Sans", sans-serif;
+  color: #273444;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;  /* 세로 스크롤 허용 */
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+  touch-action: manipulation; /* 기본 터치 동작 허용 */
+  -webkit-overflow-scrolling: touch; /* iOS에서 부드러운 스크롤 */
+}
+
+.container {
+  width: 1000px;
+  max-width: 100%;   /* 화면 크기에 맞게 조정 */
+  min-width: unset; /* 최소 너비 제한 해제 */
+  background-color: white;
+  border-radius: 20px;
+  margin: 5px auto;
+  padding: 5px 15px 10px 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  min-height: calc(80vh);
+  display: flex;
+  flex-direction: column;
+
+}
+
+/* 2. 태블릿에서 비율 유지하면서 꽉 차게/ Teclast P50 = 1280x800/*/
+@media (min-width: 481px) and (max-width: 1300px) {
+  .container {
+    width: 100%;
+    touch-action: manipulation pinch-zoom;
+  }
+
+    body {
+      touch-action: pan-x pan-y pinch-zoom;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  /* 3. 모바일(768px 이하)에서만 원래 크기로 유지 */
+  @media (max-width: 480px) {
+    .container {
+      width: 1000px;       /* 원래 크기 고정 */
+      max-width: unset;      /* 최대 너비 제한 해제 */
+      min-width: unset;      /* 최소 너비 제한 해제 */
+    }
+  }
+
+/* 터치 대응 최적화 */
+body, .container {
+  touch-action: manipulation; /* 기본 터치 동작 허용 */
+  -webkit-overflow-scrolling: touch;
+}
+
+  /* 2. 레이아웃 및 섹션 스타일 */
+  .header-container {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .section {
+    margin-bottom: 0px;
+  }
+
+  .section>div {
+    margin-bottom: 5px;
+  }
+
+  /* 3. 텍스트 및 제목 스타일 */
+  h2 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0 1px;
+  }
+
+  p {
+    font-size: 14px;
+    color: #000000;
+    font-weight: bold;
+    padding-left: 10px;
+    margin-top: 10px;
+    margin-bottom: 0px;
+    line-height: 1.4;
+  }
+
+  .terms {
+    font-size: 10px;
+    font-weight: lighter;
+    margin-bottom: 0px;
+    line-height: 1.2;
+  }
+
+  .terms strong {
+    font-weight: 700;
+    font-size: 11px;
+    color: #273444;
+    margin-left: -12px;
+  }
+
+  /* 4. 입력 필드 스타일 */
+  .thisbox {
+    width: calc(100% - 15px);
+    height: 35px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    margin-bottom: 0px;
+    margin-left: 15px;
+    padding-left: 10px;
+  }
+
+  .thisbox[readonly] {
+    background-color: #f5f5f5;
+  }
+
+  /* Personal info input fields */
+  input[name="userid"],
+  input[name="name"],
+  input[name="contact"],
+  input[name="birthdate"],
+  input[name="address"],
+  .radio-group {
+    background-color: #e6f3ff;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    margin: 0 15px 0px 15px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 5px;
+    margin-right: 0px;
+  }
+
+  .name-contact {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1px;
+  }
+
+  .name-contact>div {
+    flex: 1;
+  }
+
+  .gender-group {
+    flex: 0.5;
+  }
+
+  .birthdate-group {
+    flex: 0.8;
+  }
+
+  .goal-group {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 10px; /* 위아래 간격 */
+    column-gap: 2px; /* 좌우 간격 */
+    align-items: center;
+    width: 46vw;
+  }
+
+
+  .goal-group label {
+    font-size: 14px !important;
+    color: #000000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0px;
+    margin-bottom: 1px;
+    margin-right: 5px;
+  }
+
+  input[type="checkbox"] {
+    width: 12px;
+    height: 12px;
+    margin-right: 3px;
+  }
+
+  input[type="radio"] {
+    width: 12px;
+    height: 12px;
+    margin-right: 3px;
+  }
+
+  .goal-group input[type="text"] {
+    width: 120px;
+    height: 32px;
+    padding: 0px 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    line-height: normal;
+    box-sizing: border-box;
+  }
+
+
+  /* 5. 버튼 및 상호작용 요소 */
+  .button-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin: -70px auto 20px auto;
+    /* Changed from -80px to -70px to move down */
+  }
+
+  .submitBtn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 130px;
+    height: 40px;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    background-color: #0078D7;
+  }
+
+  .submitBtn:hover {
+    background-color: #005bb5;
+  }
+
+  .address-search-btn {
+    width: 100px;
+    height: 35px;
+    background-color: #0078D7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 0.3px;
+    margin-bottom: 1px;
+  }
+
+  /* 6. 날짜 및 선택 입력 스타일 */
+  .sign-date {
+    text-align: center;
+    margin: -5px 0 30px 0;
+  }
+
+  .sign-date select {
+    width: 60px;
+    text-align: center;
+    margin: 0 5px;
+    padding: 0px;
+    border: none;
+    border-bottom: 1px solid #000;
+    background: transparent;
+    appearance: none;
+    margin-bottom: 1px;
+    line-height: 1.5;
+    letter-spacing: 1.5px;
+  }
+
+  .time-input {
+    width: 60px;
+    height: 25px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 0 5px;
+    margin-left: 5px;
+    margin-bottom: 1px;
+  }
+
+  /* 7. 서명 박스 및 캔버스 스타일 */
+  .signbox {
+    height: 110px;
+  }
+
+  .canvas {
+    width: 180px;
+    height: 50px;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(50, 50, 255, 0.11), 0 1px 3px rgba(0, 0, 0, 0.068);
+    float: right;
+    position: relative;
+    top: -40px;
+    touch-action: none;
+  }
+
+  /* 8. 구분선 및 기타 요소 */
+  hr {
+    border: 1px solid #003366;
+    margin: 1px 0;
+  }
+
+  /* Icon styling */
+  .fa-solid,
+  .fa-brands {
+    font-size: 15px;
+    margin-right: 5px;
+    margin-left: 5px;
+  }
+
+
+  /* Added styles for total amount container */
+  .total-amount-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 0px;
+    margin-bottom: 2px;
+  }
+
+  .total-amount-container input {
+    flex: 1;
+    background-color: #f5f5f5;
+  }
+
+
+  /*<link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">*/
+  .card {
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-body {
+    padding: 2rem;
+  }
+
+  .form-control:focus {
+    box-shadow: none;
+    border-color: var(--bs-primary);
+  }
+
+  .btn-primary {
+    padding: 0.6rem 1.5rem;
+  }
+
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  #loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 2rem;
+    border-radius: 10px;
+  }
+
+  .alert {
+    margin-top: 1rem;
+    margin-bottom: 0;
+  }
+
+  #verification-form {
+    transition: all 0.3s ease;
+  }
+
+  .input-group-text {
+    min-width: 50px;
+  }
+
+  #contracts-form {
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+  }
+
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
+  }
+
+  #contracts-form .btn-lg {
+    padding: 1rem;
+    font-size: 1.1rem;
+  }
+
+  #contracts-form .btn-secondary {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }

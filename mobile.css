@@ -1,0 +1,86 @@
+/* mobile.css */
+@media only screen and (max-width: 480px) {
+    /* 전체 컨테이너 레이아웃 */
+    .container {
+      padding: 10px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+
+    .headerLogoSection {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin: 10px 0 !important;
+    }
+
+    .brandLogo {
+        width: 10% !important;
+    }
+  
+
+
+    /* 헤더 영역: 수직 정렬 및 중앙 배치 */
+    .header-container {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+    }
+    
+    .header-container > div {
+      margin: 5px 0 !important;
+    }
+    
+    .header-container img {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+    
+    /* 입력 박스, 드롭다운 등 기본 요소 너비 100% 적용 */
+    .thisbox {
+      box-sizing: border-box !important;
+      margin-bottom: 10px !important;
+    }
+    
+    /* 각 섹션은 수직으로 배치 */
+    .section {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      margin-bottom: 15px !important;
+    }
+    
+    .section > div {
+      width: 100% !important;
+    }
+    
+    /* 제목, 본문 텍스트 크기 조정 */
+    h2 {
+      font-size: 20px !important;
+      margin: 10px 0 !important;
+    }
+    
+    p, label {
+      font-size: 14px !important;
+    }
+    
+    /* 버튼 스타일 조정: 전체 너비, 폰트 크기, 패딩 */
+    .button-container button.submitBtn {
+      width: 100% !important;
+      font-size: 18px !important;
+      padding: 10px !important;
+    }
+    
+    /* 날짜 선택 드롭다운 */
+    .year, .month, .day {
+      font-size: 14px !important;
+      padding: 5px !important;
+    }
+    
+    .workoutTime, .referral {
+        flex-direction: column !important;
+    }  
+}
+  
