@@ -730,6 +730,26 @@
 
     // 매니저알림톡 버튼 클릭 이벤트
     document.getElementById('send-manager-btn').addEventListener('click', async () => {
+      // 영수증 저장 여부 확인
+      const savedReceipts = document.querySelectorAll('.save-note-btn:disabled');
+      
+      if (savedReceipts.length === 0) {
+        // 영수증이 하나도 저장되지 않았을 때 경고창 표시 및 카메라 버튼 반짝이기
+        alert('⚠️ 영수증 저장후 매니저알림톡 발송이 가능합니다.');
+        
+        // 첫번째 영수증의 카메라 버튼 찾기
+        const firstCaptureBtn = document.querySelector('.receipt-box[data-index="1"] .capture-btn');
+        if (firstCaptureBtn) {
+          // 다른 모든 반짝이는 버튼에서 효과 제거
+          document.querySelectorAll('.blink-border').forEach(el => {
+            el.classList.remove('blink-border');
+          });
+          // 카메라 버튼에 반짝임 효과 추가
+          firstCaptureBtn.classList.add('blink-border');
+        }
+        return; // 알림톡 발송 중단
+      }
+      
       const button = document.getElementById('send-manager-btn');
       button.disabled = true;
       button.textContent = '전송 중...';

@@ -8,7 +8,7 @@ const USER_ID = 'bodystar';
 const SENDER_KEY = 'b4c886fa9bd3cbf1faddb759fa6532867844ef03';
 const SENDER_PHONE = '01092792273';
 const COMPANY_NAME = '바디스타';
-const MANAGER_PHONE = '01086871992';  // 매니저 알람톡 수신 전화번호
+// Manager phone will be fetched from Firebase when needed
 
 // 카카오 알림톡 API 호출 함수
 async function sendKakaoAlimtalk(params) {
@@ -156,25 +156,48 @@ async function sendKakaoMember() {
 }
 
 // 매니저 알림톡 (계약서 도착 알림)
+// 매니저 폰번호 가져오기 함수
+async function getManagerPhone() {
+  try {
+    const { getDoc } = await import("https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js");
+    const docRef = doc(db, "AdminSettings", "settings");
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return docSnap.data().managerPhone;
+    } else {
+      console.error("매니저 정보가 없습니다.");
+      return '01092792273'; // 기본값으로 하드코딩된 번호 반환
+    }
+  } catch (error) {
+    console.error("매니저 전화번호 로딩 오류:", error);
+    return '01092792273'; // 오류 시 기본값 반환
+  }
+}
+
 async function sendKakaoManager() {
   try {
     const userData = await getContractData();
     const contractUrl = userData.imageUrl.replace('https://', '');
     const 계약서 = '회원가입계약서';
+    
+    // 매니저 전화번호 가져오기
+    const managerPhone = await getManagerPhone();
+    
     const params = new URLSearchParams({
       'apikey': API_KEY,
       'userid': USER_ID,
       'senderkey': SENDER_KEY,
       'tpl_code': 'TY_4677',
       'sender': SENDER_PHONE,
-      'receiver_1': MANAGER_PHONE,
+      'receiver_1': managerPhone,
       'subject_1': '계약알림',
       'emtitle_1': `${계약서} 도착!`,
       'message_1': `[${userData.branch},${userData.contract_manager}]\n`
         + `■ ${userData.docId}/${userData.gender}/${userData.birthdate}\n`
         + `■ 회원권: ${userData.membership}, ${userData.membership_months}개월\n`
-        + `■ 총금액: ${userData.totalAmount}\n`
-        + `■ 결제예정: ${userData.unpaid ? userData.unpaid.replace('결제예정 ', '') : ''}\n`
+        + `■ 총금액: ${userData.totalAmount ? userData.totalAmount.replace('₩', '').replace('₩ ', '').trim() + '원' : '0원'}\n`
+        + `■ 결제예정: ${userData.unpaid ? userData.unpaid.replace('결제예정 ', '').replace('₩', '').replace('₩ ', '').trim() + '원' : '전액결제완료'}\n`
         + `■ 가입경로: ${userData.referral_sources.map(ref => ref.source + (ref.detail ? `: ${ref.detail}` : '')).join(', ')}\n`,
       // JSON 형태의 문자열을 올바르게 이스케이프 처리
       'button_1': `{
