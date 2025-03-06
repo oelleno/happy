@@ -440,11 +440,13 @@
             }
 
             if (adminCodeInput === storedAdminCode) {
-                alert("✅ 관리자 인증 성공!");
-                // 🚀 기존 `checkExistingMember(localStorage.getItem('verifiedPhone'))` 삭제
-                window.location.href = "membership.html"; // 관리자 로그인 후 회원 관리 페이지로 이동
+                showNotification("✅ 관리자 인증 성공!", "success");
+                // 잠시 후 페이지 이동
+                setTimeout(function() {
+                    window.location.href = "membership.html"; // 관리자 로그인 후 회원 관리 페이지로 이동
+                }, 1500);
             } else {
-                alert("❌ 잘못된 관리자 코드입니다.");
+                showNotification("❌ 잘못된 관리자 코드입니다.", "error");
             }
         }
 
