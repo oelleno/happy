@@ -1,4 +1,3 @@
-
 // Firebase SDK 불러오기
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
@@ -29,11 +28,13 @@ async function submitForm() {
             const birthdate = document.getElementById('birthdate').value.trim();
             const address = document.getElementById('main_address').value.trim();
             const membership = document.getElementById('membership').value.trim();
+            const isAdmin = localStorage.getItem("adminVerified"); // 관리자 인증 여부 확인
 
             if (!name || !contact) {
                 reject(new Error("이름과 연락처를 입력하세요."));
                 return;
             }
+
             const rentalMonths = document.getElementById('rental_months').value.trim();
             const lockerMonths = document.getElementById('locker_months').value.trim();
             const membershipMonths = document.getElementById('membership_months').value.trim();
@@ -50,7 +51,7 @@ async function submitForm() {
             const startOfDay = new Date(now.setHours(0, 0, 0, 0));
             const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-            const querySnapshot = await getDocs(collection(db, "회원가입계약서"));
+            const querySnapshot = await getDocs(collection(db, "Membership"));
             let todayDocs = 0;
             querySnapshot.forEach(doc => {
                 const docDate = new Date(doc.data().timestamp);
@@ -120,23 +121,23 @@ async function submitForm() {
                     refund: document.querySelector('input[name="refund_terms_agree"]').checked
                 },
                 timestamp: new Date().toISOString(),
-                unpaid: document.getElementById('unpaid').value
+                unpaid: document.getElementById('unpaid').value,
+                adminVerified: isAdmin ? true : false // 🔹 관리자 인증 여부 추가
             };
 
             // Firestore에 저장
-            await setDoc(doc(db, "회원가입계약서", docId), userData);
+            await setDoc(doc(db, "Membership", window.docId), userData);
             resolve();
         } catch (error) {
             console.error("회원 정보 저장 중 오류 발생:", error);
             alert("회원 정보 저장에 실패했습니다.");
             reject(error);
-        } finally {
-            // 클린업 작업이 필요한 경우 여기에 추가
         }
     });
 }
 
-// irebase Storage에 업로드
+
+// Firebase Storage에 업로드
 // HTML에서 호출할 수 있도록 전역 함수로 설정
 async function uploadImage(fileName, blob) {
     try {
@@ -147,7 +148,7 @@ async function uploadImage(fileName, blob) {
         const db = getFirestore(); // Firestore 인스턴스 가져오기
 
         // 🔹 Firebase Storage 경로 설정 및 업로드
-        const storageRef = ref(storage, `회원가입계약서/${window.docId}/${fileName}`);
+        const storageRef = ref(storage, `Membership/${window.docId}/${fileName}`);
         await uploadBytes(storageRef, blob);
         console.log("✅ Firebase Storage 업로드 완료!");
 
@@ -157,7 +158,7 @@ async function uploadImage(fileName, blob) {
 
         // 🔹 Firestore에 URL 저장 (window.docId 사용)
         if (window.docId) {
-            const docRef = doc(db, "회원가입계약서", window.docId);
+            const docRef = doc(db, "Membership", window.docId);
             await updateDoc(docRef, { imageUrl: downloadURL });
             console.log("✅ Firestore에 이미지 URL 저장 완료:", downloadURL);
         } else {

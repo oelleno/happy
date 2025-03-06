@@ -410,7 +410,7 @@
 
               if (shouldLoad && phone) {
                 try {
-                  const querySnapshot = await db.collection("회원가입계약서").get();
+                  const querySnapshot = await db.collection("Membership").get();
                   querySnapshot.forEach((doc) => {
                     if (doc.data().contact === phone) {
                       const data = doc.data();

@@ -89,9 +89,14 @@
     }
     
     .capture-btn.blink-border {
-      border: 2px solid transparent;
+      border: 2px solid #ffff00;
       box-shadow: 0 0 15px #ffff00;
       animation: blink-border 1.5s infinite;
+      z-index: 100;
+      position: absolute; /* 절대 위치로 고정 */
+      bottom: 10px; /* 기존 위치 유지 */
+      right: 10px; /* 기존 위치 유지 */
+      background-color: rgba(255, 255, 0, 0.2);
     }
 
     .receipt-label {
@@ -385,11 +390,9 @@
       });
       currentReceiptBox.appendChild(captureBtn);
 
-      // 이미지 캡처 후 반짝이는 효과를 카메라 버튼에서 저장 버튼으로 이동
+      // 모든 반짝이는 버튼에서 효과 제거
       document.querySelectorAll('.blink-border').forEach(el => {
-        if (el.classList.contains('capture-btn')) {
-          el.classList.remove('blink-border');
-        }
+        el.classList.remove('blink-border');
       });
       
       // 현재 영수증 컨테이너의 저장 버튼에 반짝이는 효과 추가
@@ -449,9 +452,18 @@
       document.querySelector('.preview-container').style.display = 'none';
     }
 
-    // 초기 저장 버튼에 반짝임 효과 추가하지 않도록 처리
+    // 페이지 로드 시 회원알림톡 버튼에 반짝임 효과 추가
     document.addEventListener('DOMContentLoaded', function() {
-      // 회원알림톡부터 반짝이도록 설정 (페이지 로드 시 이미 설정됨)
+      // 다른 모든 반짝이는 버튼에서 효과 제거
+      document.querySelectorAll('.blink-border').forEach(el => {
+        el.classList.remove('blink-border');
+      });
+      
+      // 회원알림톡 버튼에 반짝임 효과 추가
+      const sendCustomerBtn = document.getElementById('send-customer-btn');
+      if (sendCustomerBtn && !sendCustomerBtn.disabled) {
+        sendCustomerBtn.classList.add('blink-border');
+      }
     });
     
     // 노트 저장 버튼 이벤트
@@ -487,7 +499,7 @@
         alert('계약서 ID를 찾을 수 없습니다.');
         return;
       }
-      const storagePath = `회원가입계약서/${window.docId}/${fileName}`;
+      const storagePath = `Membership/${window.docId}/${fileName}`;
       const storageRef = ref(storage, storagePath);
 
       const canvas = document.createElement('canvas');
@@ -511,7 +523,7 @@
         const downloadURL = await getDownloadURL(storageRef);
 
         // Update Firestore document with receipt URL
-        const docRef = doc(db, "회원가입계약서", window.docId);
+        const docRef = doc(db, "Membership", window.docId);
         await updateDoc(docRef, {
           receipts: arrayUnion({
             url: downloadURL,
@@ -523,32 +535,43 @@
         btn.textContent = '저장완료';
         btn.disabled = true;
 
-        // 영수증 저장이 완료되면 최종업로드 버튼에 반짝이 효과 적용
-        const uploadBtn = document.getElementById('excel-upload-btn');
-        if (uploadBtn && !uploadBtn.classList.contains('blink-border')) {
-          uploadBtn.classList.add('blink-border');
-        }
-
         const captureBtn = receiptBox.querySelector('.capture-btn');
         captureBtn.disabled = true;
         captureBtn.style.opacity = '0.5';
         captureBtn.style.cursor = 'not-allowed';
         
-        // 다음 영수증의 저장 버튼에 반짝이기 효과 추가
+        // 모든 반짝이는 버튼에서 효과 제거
+        document.querySelectorAll('.blink-border').forEach(el => {
+          el.classList.remove('blink-border');
+        });
+        
+        // 다음 영수증의 카메라 버튼에 반짝이는 효과 추가
         const currentIndex = parseInt(receiptBox.dataset.index);
         const nextReceiptBox = document.querySelector(`.receipt-box[data-index="${currentIndex + 1}"]`);
+        
         if (nextReceiptBox) {
-          const nextSaveBtn = nextReceiptBox.closest('.receipt-container').querySelector('.save-note-btn');
-          if (nextSaveBtn && !nextSaveBtn.disabled) {
+          const nextCaptureBtn = nextReceiptBox.querySelector('.capture-btn');
+          if (nextCaptureBtn && !nextCaptureBtn.disabled) {
             // 다른 모든 반짝이는 버튼에서 효과 제거
             document.querySelectorAll('.blink-border').forEach(el => {
-              if (!el.id || el.id !== 'excel-upload-btn') {
-                el.classList.remove('blink-border');
-              }
+              el.classList.remove('blink-border');
             });
-            nextSaveBtn.classList.add('blink-border');
+            // 버튼의 위치 변경 없이 반짝임 효과만 추가
+            nextCaptureBtn.classList.add('blink-border');
+          }
+        } else {
+          // 모든 영수증이 저장된 경우 매니저알림톡 버튼에 반짝이는 효과 추가
+          const managerBtn = document.getElementById('send-manager-btn');
+          if (managerBtn && !managerBtn.disabled) {
+            // 다른 모든 반짝이는 버튼에서 효과 제거
+            document.querySelectorAll('.blink-border').forEach(el => {
+              el.classList.remove('blink-border');
+            });
+            managerBtn.classList.add('blink-border');
           }
         }
+        
+        // 여기서는 더 이상 다음 저장 버튼으로 이동하지 않음 (위에서 처리)
       } catch (error) {
         console.error('이미지 저장 실패:', error);
         alert('이미지 저장에 실패했습니다.');
@@ -579,7 +602,7 @@
     async function showCompletionPopup() {
       try {
         // Firestore에서 특정 문서 가져오기
-        const docRef = doc(db, "회원가입계약서", window.docId);
+        const docRef = doc(db, "Membership", window.docId);
         const docSnap = await getDoc(docRef);
         
         // 계약 담당자 이름 가져오기
@@ -681,20 +704,26 @@
 
       try {
         await sendKakaoMember();
-        button.textContent = '회원알림완료!';
+        button.textContent = '📱 회원알림완료!';
         button.classList.replace('btn-warning', 'btn-secondary');
         
-        // 회원알림톡 전송 후 매니저알림톡 버튼 반짝이기
-        const managerBtn = document.getElementById('send-manager-btn');
-        managerBtn.classList.add('blink-border');
+        // 회원알림톡 전송 후 카메라 버튼 반짝이기 (영수증1)
+        const firstCaptureBtn = document.querySelector('.receipt-box[data-index="1"] .capture-btn');
+        if (firstCaptureBtn) {
+          // 다른 모든 반짝이는 버튼에서 효과 제거
+          document.querySelectorAll('.blink-border').forEach(el => {
+            el.classList.remove('blink-border');
+          });
+          firstCaptureBtn.classList.add('blink-border');
+        }
         
         // 모든 작업 완료 여부 확인
         window.checkAllActionsCompleted();
       } catch (error) {
         console.error('회원 알림톡 전송 실패:', error);
-        alert('회원 알림톡 전송에 실패했습니다.');
+        alert('회원 알림톡 전송 실패: ' + (error.message || '알 수 없는 오류'));
         button.disabled = false;
-        button.textContent = '🚀회원알림톡';
+        button.textContent = '📱 회원알림톡';
         button.classList.add('blink-border');
       }
     });
@@ -708,17 +737,17 @@
 
       try {
         await sendKakaoManager();
-        button.textContent = '매니저알림완료!';
+        button.textContent = '📝 매니저알림완료!';
         button.classList.replace('btn-danger', 'btn-secondary');
         
-        // 매니저알림톡 전송 후 카메라 버튼 반짝이기 (영수증1)
-        const captureButtons = document.querySelectorAll('.capture-btn');
-        if (captureButtons.length > 0) {
+        // 매니저알림톡 전송 후 최종업로드 버튼 반짝이기
+        const uploadBtn = document.getElementById('excel-upload-btn');
+        if (uploadBtn) {
           // 다른 모든 반짝이는 버튼에서 효과 제거
           document.querySelectorAll('.blink-border').forEach(el => {
             el.classList.remove('blink-border');
           });
-          captureButtons[0].classList.add('blink-border');
+          uploadBtn.classList.add('blink-border');
         }
         
         // 모든 작업 완료 여부 확인

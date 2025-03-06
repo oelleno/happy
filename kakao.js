@@ -85,7 +85,7 @@ async function getContractData() {
     throw new Error('계약서 번호(docId)가 없습니다.');
   }
 
-  const docRef = doc(db, "회원가입계약서", window.docId);
+  const docRef = doc(db, "Membership", window.docId);
   const docSnap = await getDoc(docRef).catch(err => {
     console.error("Firestore getDoc 오류:", err);
     throw new Error('계약서 정보 조회 중 오류가 발생했습니다.');
@@ -129,7 +129,7 @@ async function sendKakaoMember() {
       'senderkey': SENDER_KEY,
       'tpl_code': 'TY_1680',
       'sender': SENDER_PHONE,
-      'receiver_1': customerPhone, 
+      'receiver_1': customerPhone,
       'subject_1': '계약서',
       'message_1': `[${COMPANY_NAME}]\n안녕하세요. ${customerName}님!\n${COMPANY_NAME}에 등록해주셔서 진심으로 감사드립니다!`,
       'button_1': JSON.stringify({
@@ -159,30 +159,42 @@ async function sendKakaoMember() {
 async function sendKakaoManager() {
   try {
     const userData = await getContractData();
-    const customerName = userData.name;
     const contractUrl = userData.imageUrl.replace('https://', '');
-
+    const 계약서 = '회원가입계약서';
     const params = new URLSearchParams({
       'apikey': API_KEY,
       'userid': USER_ID,
       'senderkey': SENDER_KEY,
-      'tpl_code': 'TY_1680',
+      'tpl_code': 'TY_4677',
       'sender': SENDER_PHONE,
       'receiver_1': MANAGER_PHONE,
-      'subject_1': '계약서',
-      'message_1': `[매니저알림]\n안녕하세요. ${customerName}님!\n${COMPANY_NAME}에 등록해주셔서 진심으로 감사드립니다!`,
-      'button_1': JSON.stringify({
-        "button": [
-          { "name": "채널추가", "linkType": "AC", "linkTypeName": "채널 추가" },
-          {
-            "name": "계약서 바로가기",
-            "linkType": "WL",
-            "linkTypeName": "웹링크",
-            "linkPc": `https://${contractUrl}`,
-            "linkMo": `https://${contractUrl}`
-          }
-        ]
-      }),
+      'subject_1': '계약알림',
+      'emtitle_1': `${계약서} 도착!`,
+      'message_1': `[${userData.branch},${userData.contract_manager}]\n`
+        + `■ ${userData.docId}/${userData.gender}/${userData.birthdate}\n`
+        + `■ 회원권: ${userData.membership}, ${userData.membership_months}개월\n`
+        + `■ 총금액: ${userData.totalAmount}\n`
+        + `■ 결제예정: ${userData.unpaid ? userData.unpaid.replace('결제예정 ', '') : ''}\n`
+        + `■ 가입경로: ${userData.referral_sources.map(ref => ref.source + (ref.detail ? `: ${ref.detail}` : '')).join(', ')}\n`,
+      // JSON 형태의 문자열을 올바르게 이스케이프 처리
+      'button_1': `{
+              \"button\": [
+                {
+                  \"name\": \"계약서 바로가기\",
+                  \"linkType\": \"WL\",
+                  \"linkTypeName\": \"웹링크\",
+                  \"linkPc\": \"https://${contractUrl}\",
+                  \"linkMo\": \"https://${contractUrl}\"
+                },
+                {
+                  \"name\": \"영수증 바로가기\",
+                  \"linkType\": \"WL\",
+                  \"linkTypeName\": \"웹링크\",
+                  \"linkPc\": \"${userData.receipts?.[0]?.url || contractUrl}\",
+                  \"linkMo\": \"${userData.receipts?.[0]?.url || contractUrl}\"
+                }
+              ]
+            }`,
       'failover': 'N'
     });
 
@@ -196,3 +208,4 @@ async function sendKakaoManager() {
 }
 
 export {sendVerificationCode, sendKakaoMember, sendKakaoManager};
+

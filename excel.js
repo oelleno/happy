@@ -30,7 +30,7 @@ export async function excelupload() {
 
   try {
     // Firestore에서 특정 문서 가져오기
-    const docRef = doc(db, "회원가입계약서", docId);
+    const docRef = doc(db, "Membership", docId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -87,7 +87,7 @@ export async function excelupload() {
     // 기존 엑셀 파일 가져오기
     let workbook;
     let existingData = [];
-    const sheetName = "회원가입계약서";
+    const sheetName = "회원가입계약서"; // 변경된 시트 이름
     const headerRow = [
       "ID", "지점", "계약담당자", "이름", "연락처", "성별",
       "생년월일", "주소", "회원권", "운동복대여", "라커대여",
@@ -147,7 +147,7 @@ export async function excelupload() {
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 
-    const fileRef = ref(storage, fileName);
+    const fileRef = ref(storage, `Membership/${window.docId}/${fileName}`); // 변경된 경로
     await uploadBytesResumable(fileRef, blob);
 
     const uploadBtn = document.getElementById("excel-upload-btn");
@@ -155,7 +155,7 @@ export async function excelupload() {
     uploadBtn.disabled = true;
     uploadBtn.classList.remove("blink-border"); // 반짝임 효과 제거
     console.log("✅ 엑셀 업데이트가 성공적으로 완료되었습니다!");
-    
+
     // 모든 작업 완료 여부 확인 - 부모창의 함수 호출
     if (window.parent && window.parent.checkAllActionsCompleted) {
       window.parent.checkAllActionsCompleted();

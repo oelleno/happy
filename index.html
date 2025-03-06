@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="language" content="ko">
+    <script type="module" src="./firebase.js"></script>
     <title>계약서 선택</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <style>
@@ -24,19 +25,19 @@
             text-align: center;
             min-width: 250px;
         }
-        
+
         .notification.success {
             background-color: #28a745;
         }
-        
+
         .notification.error {
             background-color: #dc3545;
         }
-        
+
         .notification.show {
             opacity: 1;
         }
-        
+
         .container {
             display: flex;
             justify-content: center;
@@ -73,12 +74,12 @@
 <body>
     <script>
         localStorage.clear(); // 모든 localStorage 데이터 삭제
-        
+
         // Function to show in-page notification
         function showNotification(message, type) {
             // Check if notification element already exists
             let notification = document.getElementById('notification');
-            
+
             // If not, create it
             if (!notification) {
                 notification = document.createElement('div');
@@ -98,15 +99,15 @@
                 notification.style.minWidth = '250px';
                 document.body.appendChild(notification);
             }
-            
+
             // Set notification content
             notification.innerHTML = `<p class="mb-2"><strong>${message}</strong></p>`;
-            
+
             // Show notification
             setTimeout(() => {
                 notification.style.opacity = '1';
             }, 10);
-            
+
             // Hide after 3 seconds
             setTimeout(() => {
                 notification.style.opacity = '0';
@@ -123,6 +124,13 @@
                     <button class="btn btn-secondary btn-contract" disabled>PT계약서 (준비중)</button>
                     <button class="btn btn-secondary btn-contract" disabled>일일권계약서 (준비중)</button>
                 </div>
+
+                <script>
+                    function showVerification() {
+                        document.getElementById('contract-selection').style.display = 'none';
+                        document.getElementById('verification-section').style.display = 'block';
+                    }
+                </script>
 
                 <div id="verification-section">
                     <h2 class="text-center mb-4">전화번호 인증</h2>
@@ -141,7 +149,8 @@
                             <div class="d-flex align-items-center">
                                 <input type="text" class="form-control" id="verification-code" placeholder="4자리 코드 입력"
                                     inputmode="tel" lang="ko">
-                                <span id="timer" class="ms-2 badge" style="height: 38px; display: flex; align-items: center; font-size: 14px; background-color: #6610f2 !important; color: white;">3:00</span>
+                                <span id="timer" class="ms-2 badge"
+                                    style="height: 38px; display: flex; align-items: center; font-size: 14px; background-color: #6610f2 !important; color: white;">3:00</span>
                             </div>
                             <button id="verify-code" class="btn btn-success mt-3 w-100">인증하기</button>
                         </div>
@@ -187,21 +196,18 @@
         const db = firebase.firestore();
         auth.languageCode = "ko";
 
-        function showVerification() {
-            document.getElementById('contract-selection').style.display = 'none';
-            document.getElementById('verification-section').style.display = 'block';
-        }
+        // Function moved up to the onclick handler
 
         let verificationId = '';
 
         let timerInterval;
-        
+
         function startTimer(duration, display) {
             let timer = duration;
             let minutes, seconds;
-            
+
             clearInterval(timerInterval); // Clear any existing timer
-            
+
             timerInterval = setInterval(function () {
                 minutes = parseInt(timer / 60, 10);
                 seconds = parseInt(timer % 60, 10);
@@ -216,23 +222,23 @@
                     display.textContent = "만료됨";
                     display.classList.remove("bg-danger");
                     display.classList.add("bg-secondary");
-                    
+
                     // Disable verification and show resend button
                     document.getElementById('verification-code').disabled = true;
                     document.getElementById('verify-code').disabled = true;
-                    
+
                     // Add resend button if it doesn't exist
                     if (!document.getElementById('resend-code')) {
                         const resendBtn = document.createElement('button');
                         resendBtn.id = 'resend-code';
                         resendBtn.className = 'btn btn-warning mt-2 w-100';
                         resendBtn.textContent = '인증번호 재발송';
-                        resendBtn.onclick = function() {
+                        resendBtn.onclick = function () {
                             document.getElementById('send-code').click();
                         };
                         document.getElementById('verification-code-section').querySelector('.mb-3').appendChild(resendBtn);
                     }
-                    
+
                     // Invalidate the auth code
                     window.authCode = null;
                 }
@@ -260,7 +266,7 @@
             try {
                 const response = await fetch('https://kakaoapi.aligo.in/akv10/alimtalk/send/', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                     body: params
                 });
 
@@ -269,25 +275,25 @@
                     document.getElementById('verification-code-section').style.display = 'block';
                     document.getElementById('phone-section').style.display = 'none';
                     document.getElementById('admin-button').style.display = 'none';
-                    
+
                     // Remove resend button if it exists
                     const resendBtn = document.getElementById('resend-code');
                     if (resendBtn) resendBtn.remove();
-                    
+
                     // Enable verification inputs
                     document.getElementById('verification-code').disabled = false;
                     document.getElementById('verification-code').value = '';
                     document.getElementById('verify-code').disabled = false;
-                    
+
                     // Reset timer display
                     const timerDisplay = document.getElementById('timer');
                     timerDisplay.textContent = "3:00";
                     timerDisplay.classList.remove("bg-secondary");
                     timerDisplay.classList.add("bg-danger");
-                    
+
                     // Start the countdown timer (3 minutes)
                     startTimer(180, timerDisplay);
-                    
+
                     window.authCode = authCode;
                     // Create in-page notification
                     showNotification("인증번호가 발송되었습니다.", "success");
@@ -303,7 +309,7 @@
         document.getElementById('verify-code').addEventListener('click', () => {
             const code = document.getElementById('verification-code').value;
             if (!code) return;
-            
+
             // Check if the timer is still valid
             const timerDisplay = document.getElementById('timer');
             if (timerDisplay.textContent === "만료됨") {
@@ -314,7 +320,7 @@
             if (window.authCode && code === window.authCode.toString()) {
                 // Stop the timer
                 clearInterval(timerInterval);
-                
+
                 const phoneNumber = document.getElementById('phone').value;
                 const formattedPhone = phoneNumber.replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
                 localStorage.setItem('verifiedPhone', formattedPhone);
@@ -329,11 +335,11 @@
                 alert('잘못된 인증번호입니다.');
             }
         });
-        
+
         // Function to check if the user is an existing member and handle accordingly
         async function checkExistingMember(phoneNumber) {
             try {
-                const querySnapshot = await db.collection("회원가입계약서").get();
+                const querySnapshot = await db.collection("Membership").get();
                 let memberFound = false;
                 let memberData = null;
 
@@ -346,11 +352,11 @@
 
                 // Display member info in the verification section if found
                 document.getElementById('verification-success').style.display = 'none';
-                
+
                 const memberInfoDiv = document.createElement('div');
                 memberInfoDiv.className = 'mt-3';
                 memberInfoDiv.style.textAlign = 'center';
-                
+
                 if (memberFound) {
                     memberInfoDiv.innerHTML = `
                         <div class="alert alert-info">
@@ -380,7 +386,7 @@
                         window.location.href = 'membership.html';
                     }, 1500);
                 }
-                
+
                 // Add the member info display to the verification section
                 const verificationSection = document.getElementById('verification-section');
                 if (verificationSection.querySelector('.member-info-display')) {
@@ -388,7 +394,7 @@
                 }
                 memberInfoDiv.classList.add('member-info-display');
                 verificationSection.appendChild(memberInfoDiv);
-                
+
             } catch (error) {
                 console.error("Error checking member:", error);
                 alert('오류가 발생했습니다.');
@@ -396,58 +402,52 @@
             }
         }
 
-
-
         function showAdminSection() {
             document.getElementById('verification-section').style.display = 'none';
             document.getElementById('admin-section').style.display = 'block';
         }
 
-        async function verifyAdmin() {
-            const adminCode = document.getElementById('admin-code').value;
-            const verifiedPhone = localStorage.getItem('verifiedPhone');
-
-            if (adminCode === '0000') {
-                try {
-                    const querySnapshot = await db.collection("회원가입계약서").get();
-                    let memberFound = false;
-                    let memberData = null;
-
-                    querySnapshot.forEach((doc) => {
-                        if (doc.data().contact === verifiedPhone) {
-                            memberFound = true;
-                            memberData = doc.data();
-                        }
-                    });
-
-                    const userInfo = document.getElementById('user-info');
-                    if (memberFound) {
-                        userInfo.className = 'alert alert-info mt-3';
-                        userInfo.innerHTML = `
-                            <p>기존 회원입니다!</p>
-                            <p>이름: ${memberData.name}</p>
-                            <p>생년월일: ${memberData.birthdate}</p>
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button onclick="loadMemberData('${verifiedPhone}')" class="btn btn-success">불러오기</button>
-                                <button onclick="window.location.href = 'membership.html'" class="btn btn-primary">신규입력</button>
-                            </div>
-                        `;
-                    } else {
-                        userInfo.className = 'alert alert-warning mt-3';
-                        userInfo.innerHTML = '신규고객입니다!';
-                        setTimeout(() => {
-                            window.location.href = 'membership.html';
-                        }, 500);
+        async function getAdminCodeFromFirestore() {
+            try {
+                const response = await fetch("https://us-central1-bodystar-1b77d.cloudfunctions.net/getAdminCode", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
                     }
-                    userInfo.style.display = 'block';
-                } catch (error) {
-                    console.error("Error checking member:", error);
-                    alert('오류가 발생했습니다.');
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    return String(result.adminCode).trim(); 
+                } else {
+                    console.error("관리자 코드 불러오기 실패:", result.error);
+                    return null;
                 }
-            } else {
-                alert('잘못된 관리자 코드입니다.');
+            } catch (error) {
+                console.error("API 호출 오류:", error);
+                return null;
             }
         }
+
+
+        async function verifyAdmin() {
+            const adminCodeInput = document.getElementById('admin-code').value;
+            const storedAdminCode = await getAdminCodeFromFirestore();
+
+            if (!storedAdminCode) {
+                alert("⚠ 관리자 코드 설정을 가져올 수 없습니다. 관리자에게 문의하세요.");
+                return;
+            }
+
+            if (adminCodeInput === storedAdminCode) {
+                alert("✅ 관리자 인증 성공!");
+                // 🚀 기존 `checkExistingMember(localStorage.getItem('verifiedPhone'))` 삭제
+                window.location.href = "membership.html"; // 관리자 로그인 후 회원 관리 페이지로 이동
+            } else {
+                alert("❌ 잘못된 관리자 코드입니다.");
+            }
+        }
+
 
         function loadMemberData(phone) {
             window.location.href = `membership.html?phone=${phone}&load=true`;

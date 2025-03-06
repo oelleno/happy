@@ -642,17 +642,17 @@ function showCardPaymentPopup() {
       if (description) {
         descInput.value = description;
       }
-      
+
       // Apply read-only and faded styling if needed
       if (isReadOnly) {
         descInput.readOnly = true;
         descInput.style.backgroundColor = '#f5f5f5';
       }
-      
+
       if (isFaded) {
         descInput.style.color = '#aaa';
         descInput.style.fontStyle = 'italic';
-        
+
         // Add focus and input event listeners to handle placeholder behavior
         descInput.addEventListener('focus', function() {
           if (this.value === '(직접입력)') {
@@ -661,7 +661,7 @@ function showCardPaymentPopup() {
             this.style.fontStyle = 'normal';
           }
         });
-        
+
         descInput.addEventListener('blur', function() {
           if (this.value === '') {
             this.value = '(직접입력)';
@@ -669,7 +669,7 @@ function showCardPaymentPopup() {
             this.style.fontStyle = 'italic';
           }
         });
-        
+
         descInput.addEventListener('input', function() {
           this.style.color = '#000';
           this.style.fontStyle = 'normal';
@@ -918,7 +918,7 @@ function showDiscountPopup() {
     const deleteBtn = document.createElement('button');
     deleteBtn.innerHTML = '×';
     deleteBtn.style.cssText = `
-      width: 24px;
+      width      width: 24px;
       height: 24px;
       border-radius: 4px;
       border: none;
