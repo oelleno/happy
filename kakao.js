@@ -1,4 +1,3 @@
-
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 import { db } from "./firebase.js";
 
@@ -39,11 +38,11 @@ async function sendKakaoAlimtalk(params) {
 }
 
 // 전화번호 인증번호 발송
-async function sendVerificationCode() {
-  const phone = document.getElementById('phone').value;
+async function sendVerificationCode(phone, authCode) {
   if (!phone) return;
 
-  const authCode = Math.floor(100000 + Math.random() * 900000);
+  // Format the auth code with spaces and quotes around it
+  const formattedAuthCode = `"${authCode}"`;
 
   const params = new URLSearchParams({
     'apikey': API_KEY,
@@ -53,7 +52,7 @@ async function sendVerificationCode() {
     'sender': SENDER_PHONE,
     'receiver_1': phone,
     'subject_1': '인증번호발송',
-    'message_1': `[${COMPANY_NAME}] 본인 확인을 위한 인증번호는 ${authCode}입니다.`,
+    'message_1': `[${COMPANY_NAME}] 본인 확인을 위한 인증번호는 ${formattedAuthCode} 입니다.`,
   });
 
   try {
@@ -69,13 +68,14 @@ async function sendVerificationCode() {
       document.getElementById('phone-section').style.display = 'none';
       document.getElementById('admin-button').style.display = 'none';
       window.authCode = authCode;
-      alert("인증번호가 발송되었습니다.");
+      return true;
     } else {
-      alert(`인증번호 전송 실패: ${data.message}`);
+      console.error(`인증번호 전송 실패: ${data.message}`);
+      return false;
     }
   } catch (error) {
     console.error('인증번호 전송 오류:', error);
-    alert('인증번호 전송 실패');
+    throw error;
   }
 }
 
@@ -162,7 +162,7 @@ async function getManagerPhone() {
     const { getDoc } = await import("https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js");
     const docRef = doc(db, "AdminSettings", "settings");
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       return docSnap.data().managerPhone;
     } else {
@@ -180,10 +180,10 @@ async function sendKakaoManager() {
     const userData = await getContractData();
     const contractUrl = userData.imageUrl.replace('https://', '');
     const 계약서 = '회원가입계약서';
-    
+
     // 매니저 전화번호 가져오기
     const managerPhone = await getManagerPhone();
-    
+
     const params = new URLSearchParams({
       'apikey': API_KEY,
       'userid': USER_ID,
@@ -230,5 +230,4 @@ async function sendKakaoManager() {
   }
 }
 
-export {sendVerificationCode, sendKakaoMember, sendKakaoManager};
-
+export { sendVerificationCode, sendKakaoMember, sendKakaoManager };

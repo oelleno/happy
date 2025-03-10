@@ -1,9 +1,10 @@
+
 // Firebase SDK 불러오기
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, getDownloadURL, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// Firebase 설정
+// Firebase 설정 - 직접 구성
 const firebaseConfig = {
   apiKey: "AIzaSyAyP5QTMzBtz8lMEzkE4C66CjFbZ3a17QM",
   authDomain: "bodystar-1b77d.firebaseapp.com",
@@ -20,7 +21,6 @@ const storage = getStorage(app);
 
 // 엑셀 파일명 설정
 const fileName = "contract.xlsx";
-
 
 // 버튼 클릭 시 실행되는 함수
 export async function excelupload() {

@@ -1,16 +1,17 @@
+
 // Firebase SDK 불러오기
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-storage.js";
 
-// Firebase 설정
+// Firebase 설정 - 환경 변수 없이 직접 구성
 const firebaseConfig = {
-    apiKey: "AIzaSyAyP5QTMzBtz8lMEzkE4C66CjFbZ3a17QM",
-    authDomain: "bodystar-1b77d.firebaseapp.com",
-    projectId: "bodystar-1b77d",
-    storageBucket: "bodystar-1b77d.firebasestorage.app",
-    messagingSenderId: "1011822927832",
-    appId: "1:1011822927832:web:87f0d859b3baf1d8e21cad"
+  apiKey: "AIzaSyAyP5QTMzBtz8lMEzkE4C66CjFbZ3a17QM",
+  authDomain: "bodystar-1b77d.firebaseapp.com",
+  projectId: "bodystar-1b77d",
+  storageBucket: "bodystar-1b77d.firebasestorage.app",
+  messagingSenderId: "1011822927832",
+  appId: "1:1011822927832:web:87f0d859b3baf1d8e21cad"
 };
 
 // Firebase 초기화
