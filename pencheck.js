@@ -1,111 +1,91 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // 형광펜 캔버스 생성
+    // 🔹 형광펜 캔버스 생성
     const canvas = document.createElement("canvas");
     document.body.appendChild(canvas);
     canvas.id = "drawingCanvas";
-    canvas.style.position = "absolute";
-    canvas.style.pointerEvents = "auto"; 
-    canvas.style.zIndex = "99"; 
-    canvas.style.touchAction = "none"; 
+    canvas.style.position = "fixed";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.zIndex = "99";
+    canvas.style.pointerEvents = "none"; 
+    canvas.style.display = "none"; 
 
     const ctx = canvas.getContext("2d");
     let lines = [];
-    const fadeOutDuration = 3000; // 형광펜 사라지는 시간 (3초)
-
-    function resizeCanvas() {
-        const termsSections = document.querySelectorAll(".terms-section");
-        if (termsSections.length === 0) return;
-
-        let minTop = Infinity;
-        let maxBottom = 0;
-        let minLeft = Infinity;
-        let maxRight = 0;
-
-        termsSections.forEach(section => {
-            const rect = section.getBoundingClientRect();
-            if (rect.top < minTop) minTop = rect.top;
-            if (rect.bottom > maxBottom) maxBottom = rect.bottom;
-            if (rect.left < minLeft) minLeft = rect.left;
-            if (rect.right > maxRight) maxRight = rect.right;
-        });
-
-        canvas.style.left = minLeft + "px";
-        canvas.style.top = minTop + "px";
-        canvas.width = maxRight - minLeft;
-        canvas.height = maxBottom - minTop;
-
-        const checkboxes = document.querySelectorAll('input[name="terms_agree"], input[name="24h_terms_agree"], input[name="refund_terms_agree"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.style.position = "relative";
-            checkbox.style.zIndex = "100";
-        });
-    }
-
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-
     let isDrawing = false;
     let lastPoint = null;
+    const fadeOutDuration = 10000; // 🔹 형광펜이 10초 후 점점 사라짐
+    let penActive = false; 
+
+    // 🔹 펜 버튼 생성
+    const penButton = document.createElement("button");
+    penButton.innerText = "🖊️";
+    penButton.style.position = "fixed";
+    penButton.style.right = "10px"; // 🔹 화면 오른쪽 끝에 위치
+    penButton.style.top = "50%";
+    penButton.style.transform = "translateY(-50%)";
+    penButton.style.padding = "10px 15px";
+    penButton.style.backgroundColor = "#FFD700"; 
+    penButton.style.color = "black";
+    penButton.style.border = "none";
+    penButton.style.borderRadius = "8px";
+    penButton.style.cursor = "pointer";
+    penButton.style.zIndex = "100";
+    penButton.style.fontSize = "20px";
+    penButton.style.fontWeight = "bold";
+    penButton.style.transition = "background-color 0.2s ease";
+    document.body.appendChild(penButton);
+
+    // 🔹 펜 버튼 클릭 시 형광펜 On/Off
+    penButton.addEventListener("click", () => {
+        penActive = !penActive;
+        if (penActive) {
+            canvas.style.display = "block"; 
+            canvas.style.pointerEvents = "auto"; 
+            penButton.style.backgroundColor = "#FFA500"; 
+        } else {
+            canvas.style.display = "none"; 
+            canvas.style.pointerEvents = "none"; 
+            penButton.style.backgroundColor = "#FFD700"; 
+        }
+    });
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
 
     function getPoint(e) {
-        if (e.type.includes('touch')) {
+        if (e.type.includes("touch")) {
             return {
-                x: e.touches[0].clientX - canvas.offsetLeft,
-                y: e.touches[0].clientY - canvas.offsetTop
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
             };
         }
         return {
-            x: e.clientX - canvas.offsetLeft,
-            y: e.clientY - canvas.offsetTop
+            x: e.clientX,
+            y: e.clientY
         };
     }
 
-    function isOverCheckbox(x, y) {
-        const checkboxes = document.querySelectorAll('input[name="terms_agree"], input[name="24h_terms_agree"], input[name="refund_terms_agree"]');
-        return Array.from(checkboxes).some(checkbox => {
-            const rect = checkbox.getBoundingClientRect();
-            return (
-                x >= rect.left - canvas.offsetLeft &&
-                x <= rect.right - canvas.offsetLeft &&
-                y >= rect.top - canvas.offsetTop &&
-                y <= rect.bottom - canvas.offsetTop
-            );
-        });
-    }
-
     function startDrawing(e) {
-        const termsSections = document.querySelectorAll(".terms-section");
-        const point = getPoint(e);
-        let insideTerms = false;
-
-        termsSections.forEach(section => {
-            const rect = section.getBoundingClientRect();
-            if (point.x >= rect.left - canvas.offsetLeft &&
-                point.x <= rect.right - canvas.offsetLeft &&
-                point.y >= rect.top - canvas.offsetTop &&
-                point.y <= rect.bottom - canvas.offsetTop) {
-                insideTerms = true;
-            }
-        });
-
-        if (!insideTerms || isOverCheckbox(point.x, point.y)) {
-            canvas.style.pointerEvents = "none"; 
-            return;
-        } else {
-            canvas.style.pointerEvents = "auto"; 
-        }
+        if (!penActive) return;
 
         e.preventDefault();
         isDrawing = true;
-        lastPoint = point;
-        lines.push({ points: [point], opacity: 0.7, startTime: Date.now() });
+        lastPoint = getPoint(e);
+        lines.push({ points: [lastPoint], opacity: 0.7, startTime: Date.now() });
         draw(e);
     }
 
     function draw(e) {
-        if (!isDrawing) return;
-        e.preventDefault();
+        if (!isDrawing || !penActive) return;
 
+        e.preventDefault();
         const point = getPoint(e);
 
         if (lines.length > 0 && lastPoint) {
